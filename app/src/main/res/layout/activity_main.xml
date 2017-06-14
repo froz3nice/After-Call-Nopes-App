@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v4.widget.DrawerLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/drawer_layout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    tools:openDrawer="start">
+
+    <include
+        layout="@layout/app_bar_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+
+    <android.support.design.widget.NavigationView
+        android:id="@+id/nav_view"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="start"
+        android:fitsSystemWindows="true"
+        app:headerLayout="@layout/nav_header_main"
+        app:menu="@menu/activity_main_drawer"
+        app:theme="@style/navigationStyle" >
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            android:id="@+id/NavHeader"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/nav_header_height"
+            android:background="@drawable/side_nav_bar"
+            android:gravity="top"
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/activity_vertical_margin"
+            android:paddingEnd="16dp"
+            android:paddingLeft="16dp"
+            android:paddingStart="16dp"
+            android:paddingTop="36dp"
+            android:theme="@style/ThemeOverlay.AppCompat.Dark"
+            android:weightSum="1">
+
+
+            <RelativeLayout
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent">
+
+                <ImageButton
+                    android:id="@+id/selector"
+                    android:layout_width="50dp"
+                    android:layout_height="50dp"
+                    android:layout_gravity="top"
+                    android:adjustViewBounds="true"
+                    android:background="@null"
+                    android:scaleType="fitCenter"
+                    android:src="@drawable/images" />
+
+                <TextView
+                    android:id="@+id/nav_username"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/selector"
+                    android:paddingTop="30dp"
+                    android:drawableRight="@drawable/ic_arrow_down"
+                    android:drawableEnd="@drawable/ic_arrow_down"
+                    android:gravity="center_vertical"
+                    android:text="Add account"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentEnd="true" />
+            </RelativeLayout>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/loggedOffLayout"
+            android:layout_marginTop="@dimen/nav_header_height"
+            android:orientation="vertical" android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:text="@string/myAcc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:textColor="@color/colorAccent"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="17dp" />
+
+            <TextView
+                android:text="@string/signIn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="signInWithGoogle"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="17dp" />
+
+
+            <TextView
+                android:text="@string/logInWithEmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:onClick="LogInEmail"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="17dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/loggedInLayout"
+            android:layout_marginTop="@dimen/nav_header_height"
+            android:orientation="vertical" android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <TextView
+                android:text="@string/myAcc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:textColor="@color/colorAccent"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="10dp"
+                android:id="@+id/textView7" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="10dp"
+                android:id="@+id/email" />
+
+            <TextView
+                android:text="@string/logout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:onClick="logOut"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="10dp"
+                android:id="@+id/textView9" />
+
+            <View android:background="@color/colorAccent"
+                android:layout_width = "match_parent"
+                android:layout_marginTop="10dp"
+                android:layout_height="1dp"/>
+            <TextView
+                android:text="Sync with"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/colorAccent"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="10dp"
+                android:id="@+id/textView11" />
+
+            <ListView
+                android:id="@+id/nav_sync_list"
+                android:layout_width="match_parent"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="10dp"
+                android:divider="@null"
+                android:layout_height="100dp" />
+
+            <TextView
+                android:text="Add new email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:onClick="AddEmail" />
+
+            <TextView
+                android:text="@string/drawer_explanation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingEnd="10dp"
+                android:paddingRight="10dp"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="10dp"
+                android:layout_gravity="bottom"
+                android:id="@+id/explanation" />
+        </LinearLayout>
+
+    </android.support.design.widget.NavigationView>
+
+</android.support.v4.widget.DrawerLayout>

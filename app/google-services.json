@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "197069054253",
+    "firebase_url": "https://after-call-note.firebaseio.com",
+    "project_id": "after-call-note",
+    "storage_bucket": "after-call-note.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:197069054253:android:cee43436b0c94659",
+        "android_client_info": {
+          "package_name": "com.example.juseris.aftercallnote"
+        }
+      },
+
+      "oauth_client": [
+        {
+          "client_id": "197069054253-fgjol1vb27o5acpl8c8aedkbh2boctmi.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "197069054253-3bj4i3rc89f26sg3pedqattg6c2gi2rg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_yZcFOxFFg8Tw1p6hnwnja3EYVkTL0bk"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

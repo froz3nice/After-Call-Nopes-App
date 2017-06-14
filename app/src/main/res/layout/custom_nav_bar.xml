@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:text="@string/myAcc"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="10dp"
+        android:id="@+id/textView7" />
+
+    <TextView
+        android:text="@string/signIn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="10dp"
+        android:id="@+id/textView8" />
+
+    <TextView
+        android:text="@string/regEmail"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="10dp"
+        android:id="@+id/textView9" />
+
+    <View android:background="@color/colorAccent"
+        android:layout_width = "match_parent"
+        android:layout_marginTop="5dp"
+        android:layout_height="1dp"/>
+
+    <ListView
+        android:id="@+id/nav_sync_list"
+        android:layout_width="match_parent"
+        android:layout_height="368dp" />
+</LinearLayout>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/action_sync"
+        app:showAsAction="never"
+        android:title="@string/SyncRefresh">
+    </item>
+    <item android:id="@+id/action_show_all"
+        app:showAsAction="never"
+        android:title="@string/showAllNotes">
+    </item>
+    <item android:id="@+id/action_show_mine"
+        app:showAsAction="never"
+        android:title="@string/showMyNotes">
+    </item>
+   <item
+        android:id="@+id/action_showSynced"
+        app:showAsAction="never"
+        android:title="@string/showSyncedNotes" />
+</menu>

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:layout_marginTop="18dp"
+    android:paddingBottom="3dp"
+    android:paddingStart="13dp"
+    android:paddingLeft="13dp"
+    android:paddingRight="1dp"
+    android:paddingEnd="1dp">
+
+    <com.android.internal.widget.DialogTitle android:id="@+id/alertTitle"
+        style="?android:attr/textAppearanceLarge"
+        android:ellipsize="end"
+        android:text="@string/selectExport"
+        android:layout_marginTop="18dp"
+        android:paddingStart="6dp"
+        android:paddingLeft="6dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start"
+        android:textAlignment="viewStart"
+        />
+
+    <CheckBox
+        android:id="@+id/checkBoxCalls"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:gravity="center_vertical"
+        android:paddingStart="14dp"
+        android:paddingLeft="14dp"
+        android:textSize="16sp"
+        android:text="@string/ExportCalls" />
+
+
+    <CheckBox
+        android:id="@+id/checkBoxNotes"
+        android:layout_marginTop="18dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="10dp"
+        android:paddingStart="14dip"
+        android:paddingLeft="14dip"
+        android:textSize="16sp"
+        android:text="@string/exportNotes" />
+</LinearLayout>

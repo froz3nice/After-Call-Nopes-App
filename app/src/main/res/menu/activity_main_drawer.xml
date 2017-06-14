@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group>
+        <item
+            android:id="@+id/nav_scheduledEvents"
+            android:icon="@drawable/ic_schedule_black_24dp"
+            android:title="@string/AllReminders" />
+        <item
+            android:id="@+id/nav_selectWeekDays"
+            android:icon="@drawable/ic_settings"
+            android:title="@string/Settings" />
+        <item
+            android:id="@+id/nav_exportData"
+            android:icon="@drawable/ic_share"
+            android:title="@string/ExportData" />
+        <item
+            android:id="@+id/nav_viewStatistics"
+            android:icon="@drawable/ic_group_black_24dp"
+            android:title="@string/ViewStatistics" />
+        <item
+            android:id="@+id/nav_allIncomingCalls"
+            android:icon="@drawable/ic_phone_black_24dp"
+            android:title="@string/AllCalls" />
+        <item
+            android:id="@+id/nav_about"
+            android:icon="@drawable/ic_about"
+            android:title="@string/about" />
+    </group>
+
+</menu>
