@@ -612,10 +612,14 @@ public class Database extends SQLiteOpenHelper implements Serializable {
         return list;
     }
     public void deleteOutgoingCalls(){
+        openDatabase();
         NoteDatabase.execSQL("delete from "+ outgoingCallTable);
+        closeDatabase();
     }
     public void deleteIncomingCalls(){
+        openDatabase();
         NoteDatabase.execSQL("delete from "+ incomingCallTable);
+        closeDatabase();
     }
     public void insertOutgoingCalls(ArrayList<ContactEntity> calls){
         openDatabase();

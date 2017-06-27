@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 
 public class MainListChildItem extends AppCompatActivity {
     private Database db = null;
@@ -65,7 +66,7 @@ public class MainListChildItem extends AppCompatActivity {
         Settings = new ClassSettings(context);
         noteList = new ArrayList<>();
         classNote = getIntent().getExtras().getParcelable("classNoteobj");
-        phoneNumber = classNote.getPhoneNumber();
+        phoneNumber = fixNumber(classNote.getPhoneNumber());
         noteList = db.getDataByNumber(phoneNumber);
         noteList.addAll(db.getSyncedNotesByNumber(phoneNumber));
         contactList = (ListView) findViewById(R.id.contactList);
@@ -93,6 +94,7 @@ public class MainListChildItem extends AppCompatActivity {
         contactList.setAdapter(listAdapter);
 
     }
+
 
 
     private void listView_MakeACall() {
@@ -142,6 +144,7 @@ public class MainListChildItem extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+
         updateListView();
         if (catchCall != null){
             catchCall.setChecked(PreferenceManager.getDefaultSharedPreferences(context)
@@ -160,6 +163,8 @@ public class MainListChildItem extends AppCompatActivity {
         catchCall.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+
                 if (catchCall.isChecked()) {
                     db.updateCatchCall(classNote.getPhoneNumber(), 1);
                     PreferenceManager.getDefaultSharedPreferences(context)
@@ -171,12 +176,13 @@ public class MainListChildItem extends AppCompatActivity {
                     dialog.getWindow().setLayout((int)width, WindowManager.LayoutParams.WRAP_CONTENT);
                     // db.updateCatchCall(classNote.getPhoneNumber(), 0);
                     //PreferenceManager.getDefaultSharedPreferences(context)
-                    //       .edit().putBoolean(phoneNumber, false).apply();
+                     //      .edit().putBoolean(phoneNumber, false).apply();
                 }
             }
         });
         catchCall.setChecked(PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean(phoneNumber, true));
+
         return true;
     }
 
@@ -255,6 +261,25 @@ public class MainListChildItem extends AppCompatActivity {
             }
         });
         Collections.reverse(noteList);
+    }
+    private String fixNumber(String number) {
+        String Number = null;
+        if (number.length() < 2) return "";
+        try {
+            Number = number.replaceAll("[ ()#~!-]", "").trim();
+            String FirstNumbers = Number.substring(0, 2);
+
+            if (FirstNumbers.equalsIgnoreCase("86")) {
+                Number = "+3706" + Number.substring(2, Number.length());
+            }
+            if (FirstNumbers.equalsIgnoreCase("85")) {
+                Number = "+3705" + Number.substring(2, Number.length());
+            }
+        } catch (Exception ex) {
+            Log.d("PhoneContacts", ex.toString());
+        }
+
+        return Number;
     }
 
     public void updateListView() {

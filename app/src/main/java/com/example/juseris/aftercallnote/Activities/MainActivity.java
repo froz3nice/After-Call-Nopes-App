@@ -2,6 +2,7 @@ package com.example.juseris.aftercallnote.Activities;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.ContentResolver;
@@ -36,7 +37,6 @@ import android.support.v7.widget.SearchView;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.style.ForegroundColorSpan;
-import android.util.Base64;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -74,7 +74,6 @@ import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Models.ClassSettings;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.DataForSyncingModel;
-import com.example.juseris.aftercallnote.Models.Order;
 import com.example.juseris.aftercallnote.R;
 import com.example.juseris.aftercallnote.XmlHandling;
 import com.google.android.gms.auth.api.Auth;
@@ -99,17 +98,6 @@ import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 import com.squareup.picasso.Transformation;
 
-import org.w3c.dom.CharacterData;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -119,10 +107,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener
@@ -415,6 +399,8 @@ public class MainActivity extends AppCompatActivity
         super.onDestroy();
     }
 
+    Intent mServiceIntent;
+
     private void initialize() {
         hasInitialized = true;
         con = new FirebaseConnection(context);
@@ -422,8 +408,18 @@ public class MainActivity extends AppCompatActivity
         noteList = new ArrayList<>();
         noteList = db.getData();
         ui_listView = (RecyclerView) findViewById(R.id.ac_main_listView);
-        System.out.println("lopassssskrc");
         new XmlHandling(context);
+    }
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                Log.i ("isMyServiceRunning?", true+"");
+                return true;
+            }
+        }
+        Log.i ("isMyServiceRunning?", false+"");
+        return false;
     }
 
 

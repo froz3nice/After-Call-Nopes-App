@@ -9,6 +9,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
@@ -87,7 +88,9 @@ public class ActivityPopupAfter extends AppCompatActivity {
     private String category = "";
     private Dialog dialog;
     CheckBox box;
-   // private Spinner spinner;
+    private SharedPreferences prefs;
+
+    // private Spinner spinner;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,6 +102,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
         );
         setContentView(R.layout.activity_popup_after);
         context = getApplicationContext();
+        prefs = PreferenceManager.getDefaultSharedPreferences(context);
         database = new Database(context);
         Settings = new ClassSettings(context);
         textNote = (EditText) findViewById(R.id.ac_note);
@@ -143,10 +147,10 @@ public class ActivityPopupAfter extends AppCompatActivity {
         });
         setTitle("");
 
-        final String nrs = PreferenceManager.getDefaultSharedPreferences(context)
+        final String nrs = prefs
                 .getString("NUMBERS", "");
         if (getIntent().getStringExtra("PhoneNumber") == null) {
-            number = PreferenceManager.getDefaultSharedPreferences(context)
+            number = prefs
                     .getString("LastActiveNr", "");
             createNotification();
         } else {
@@ -176,14 +180,14 @@ public class ActivityPopupAfter extends AppCompatActivity {
                 box.setText("Add note for " + name);
             }
         }
-        box.setChecked(PreferenceManager.getDefaultSharedPreferences(context)
+        box.setChecked(prefs
                 .getBoolean(number, true));
         box.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (box.isChecked()) {
                     database.updateCatchCall(number, 1);
-                    PreferenceManager.getDefaultSharedPreferences(context)
+                    prefs
                             .edit().putBoolean(number, true).apply();
                 } else {
                     AlertDialog dialog = alertDialog();
@@ -232,14 +236,14 @@ public class ActivityPopupAfter extends AppCompatActivity {
                             Log.d("name", nums);
                             Log.d("time", t);
                             Settings.setCallTime(t);
-                            PreferenceManager.getDefaultSharedPreferences(context)
+                            prefs
                                     .edit().putString("NUMBERS", nums).apply();
 
                             //Settings.setNumbers(nums);
                             if (nums.equals("")) {
 
                                 manager.cancel(notificationID);
-                                //PreferenceManager.getDefaultSharedPreferences(context)
+                                //prefs
                                 //   .edit().putString("LastActiveNr","").apply();
                             }
 
@@ -254,7 +258,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
                                 email = user.getEmail();
                                 String fixedEmail = email.replace(".", ",");
                                 con.addDataToFirebase(fixedEmail);
-                                String syncOccured = PreferenceManager.getDefaultSharedPreferences(context)
+                                String syncOccured = prefs
                                         .getString("SyncOccured", "");
                                 if (syncOccured.equals("")) {
                                     con.addMyNotes(fixedEmail);
@@ -299,11 +303,10 @@ public class ActivityPopupAfter extends AppCompatActivity {
                     public void onClick(DialogInterface dialog, int whichButton) {
                         //your deleting code
                         database.updateCatchCall(number, 0);
-                        PreferenceManager.getDefaultSharedPreferences(context)
+                        prefs
                                 .edit().putBoolean(number, false).apply();
                         dialog.dismiss();
-                        box.setChecked(PreferenceManager.getDefaultSharedPreferences(context)
-                                .getBoolean(number, true));
+                        box.setChecked(prefs.getBoolean(number, true));
                     }
 
                 })
@@ -311,14 +314,14 @@ public class ActivityPopupAfter extends AppCompatActivity {
 
                     @Override
                     public void onDismiss(DialogInterface dialogInterface) {
-                        box.setChecked(PreferenceManager.getDefaultSharedPreferences(context)
+                        box.setChecked(prefs
                                 .getBoolean(number, true));
                     }
                 })
                 .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
-                        box.setChecked(PreferenceManager.getDefaultSharedPreferences(context)
+                        box.setChecked(prefs
                                 .getBoolean(number, true));
                     }
                 })
@@ -328,11 +331,10 @@ public class ActivityPopupAfter extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-         if(!PreferenceManager.getDefaultSharedPreferences(context)
-                 .getString("ChosenNumber", "").equals("")) {
-             number = fixNumber(PreferenceManager.getDefaultSharedPreferences(context)
+         if(!prefs.getString("ChosenNumber", "").equals("")) {
+             number = fixNumber(prefs
                      .getString("ChosenNumber", ""));
-             box.setChecked(PreferenceManager.getDefaultSharedPreferences(context)
+             box.setChecked(prefs
                      .getBoolean(number, true));
              name = getContactName(context, number);
              if (name.equals("")) {
@@ -340,11 +342,11 @@ public class ActivityPopupAfter extends AppCompatActivity {
              } else {
                  box.setText("Add note for " + name);
              }
-             PreferenceManager.getDefaultSharedPreferences(context)
+             prefs
                      .edit().putString("ChosenNumber", "").apply();
          }
 
-        if(PreferenceManager.getDefaultSharedPreferences(context)
+        if(prefs
                 .getBoolean("haveToChooseContact", false)){
             TextView tw = (TextView)findViewById(R.id.nameOrNumber);
             tw.setVisibility(View.VISIBLE);

@@ -100,6 +100,7 @@ public class XmlHandling {
                     String firstName;
                     String lastName;
                     String orderState;
+                    String phoneNr;
                     try {
                         Document customerDoc = getXmlFileDocument(new URL(customerUrl));
                         customerDoc.getDocumentElement().normalize();
@@ -128,13 +129,27 @@ public class XmlHandling {
                         Element orderStateElement = (Element) orderLanguageTag.item(0);
                         orderState = getCharacterDataFromElement(orderStateElement);
                     }catch (Exception e){
+                        e.printStackTrace();
                         orderState = "";
+                    }
+                    NodeList nodeForPhoneNr = document.getElementsByTagName("id_address_delivery");
+                    String phoneNrUrl = nodeForPhoneNr.item(0).getAttributes().getNamedItem("xlink:href").getNodeValue();
+                    try{
+                        Document phoneNrDoc = getXmlFileDocument(new URL(phoneNrUrl));
+                        phoneNrDoc.getDocumentElement().normalize();
+
+                        NodeList phoneNrNode = phoneNrDoc.getElementsByTagName("phone_mobile");
+                        Element phoneNrElement = (Element) phoneNrNode.item(0);
+                        phoneNr = getCharacterDataFromElement(phoneNrElement);
+                    }catch (Exception e){
+                        e.printStackTrace();
+                        phoneNr = "";
                     }
                     order.setId(id);
                     order.setName(firstName);
                     order.setSurname(lastName);
                     order.setOrder_state(orderState);
-
+                    order.setPhone_nr(phoneNr);
                     orders.add(order);
                 }catch (Exception e){
                     e.printStackTrace();
