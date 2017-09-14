@@ -2,17 +2,19 @@ package com.example.juseris.aftercallnote.Activities;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.TypedValue;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
@@ -25,34 +27,51 @@ import com.example.juseris.aftercallnote.Models.CallStatisticsEntity;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.R;
 import com.github.mikephil.charting.animation.Easing;
+import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
-import com.github.mikephil.charting.components.Description;
+import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.PercentFormatter;
-import com.github.mikephil.charting.highlight.Highlight;
-import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
-import com.github.mikephil.charting.utils.ColorTemplate;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Locale;
+
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 /**
  * Created by juseris on 12/25/2016.
  */
 
-public class AllStatisticsView extends AppCompatActivity  {
+public class AllStatisticsView extends AppCompatActivity {
     private PieChart mChart;
+    private LineChart lineChart;
     private Database db;
     private CallStatisticsEntity cse;
+    private SharedPreferences prefs;
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.call_statistics);
+        setContentView(R.layout.activity_call_statistics);
         db = new Database(getApplicationContext());
         if (getIntent().getStringExtra("PhoneNumber") == null) {
             cse = db.getStatistics();
@@ -61,47 +80,29 @@ public class AllStatisticsView extends AppCompatActivity  {
             cse = db.getStatistics(getIntent().getStringExtra("PhoneNumber"));
             setTitle("Statistics of " + getContactName(getApplicationContext(), cse.getNumber()));
         }
-
-        int[] colorCodes = {
-                Color.rgb(204, 0, 204), Color.rgb(51, 0, 102)};
-        mChart = (PieChart) findViewById(R.id.chart1);
-        mChart.getDescription().setEnabled(false);
-        mChart.setExtraOffsets(5, 50, 5, 5);
-
-        mChart.setDragDecelerationFrictionCoef(0.95f);
-
-        mChart.setDrawHoleEnabled(true);
-        mChart.setHoleColor(Color.WHITE);
-        mChart.setUsePercentValues(true);
-        mChart.setCenterTextColor(Color.WHITE);
-        mChart.setTransparentCircleColor(Color.WHITE);
-        mChart.setTransparentCircleAlpha(110);
+        setUpPieChart();
         float calls = cse.getIncomingCallCount() + cse.getOutgoingCallCount();
         float notes = cse.getTypedNoteCount();
-        if(calls != 0) {
+        if (calls != 0) {
             float percentage = (notes / calls) * 100;
             //String.format("%.2f", floatValue);
-            mChart.setCenterText(String.format(java.util.Locale.US,"%.0f", percentage) + " %");
+            mChart.setCenterText(String.format(java.util.Locale.US, "%.0f", percentage) + " %");
             mChart.setCenterTextSize(22f);
             mChart.setCenterTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
         }
-        mChart.invalidate();
-        mChart.setHoleRadius(40f);
-        mChart.setTransparentCircleRadius(35f);
-        mChart.setDrawCenterText(true);
-        //mChart.setRotationAngle(0);
-        // enable rotation of the chart by touch
-       // mChart.setRotationEnabled(true);
-        mChart.setHighlightPerTapEnabled(true);
-        //mChart.getLegend().setWordWrapEnabled(true);
-
-        // mChart.setUnit(" €");
-        // mChart.setDrawUnitsInChart(true);
-
-        // add a selection listener
-       // mChart.setOnChartValueSelectedListener(this);
+        int[] colorCodes = {
+                Color.rgb(204, 0, 204), Color.rgb(51, 0, 102)};
         setData(colorCodes);
-        mChart.animateY(1400, Easing.EasingOption.EaseInSine);
+        setUpLineChart();
+        lineChart.getAxisRight().setEnabled(false);
+        YAxis leftAxis = lineChart.getAxisLeft();
+        leftAxis.setGranularity(1f);
+        leftAxis.setDrawGridLines(false);
+        leftAxis.setAxisMinimum(0f);
+        leftAxis.setDrawAxisLine(false);
+
+        setLineChartData();
+
         // mChart.spin(2000, 0, 360);
 
         LinearLayout layout = (LinearLayout) findViewById(R.id.table);
@@ -154,8 +155,8 @@ public class AllStatisticsView extends AppCompatActivity  {
             if (i == 2) {
                 float percent = (notes / calls) * 100;
                 //String.format("%.2f", floatValue);
-                mChart.setCenterText(String.format(java.util.Locale.US,"%.0f", percent) + " %");
-                String str = String.format(java.util.Locale.US,"%d (%.0f%%)",values[i],percent);
+                mChart.setCenterText(String.format(java.util.Locale.US, "%.0f", percent) + " %");
+                String str = String.format(java.util.Locale.US, "%d (%.0f%%)", values[i], percent);
                 txt_leads.setText(str);
             } else {
                 txt_leads.setText(String.valueOf(values[i]));
@@ -246,8 +247,170 @@ public class AllStatisticsView extends AppCompatActivity  {
         }
     }
 
+    private void setUpLineChart() {
+        lineChart = (LineChart) findViewById(R.id.lineChart);
+        lineChart.setDrawGridBackground(false);
 
-    private void setData(int[] colorCodes ) {
+        // no description text
+        lineChart.getDescription().setEnabled(false);
+
+        // enable touch gestures
+        lineChart.setTouchEnabled(true);
+
+        // enable scaling and dragging
+        lineChart.setDragEnabled(true);
+        lineChart.setScaleEnabled(true);
+        lineChart.setScaleXEnabled(true);
+        // mChart.setScaleYEnabled(true);
+
+        // if disabled, scaling can be done on x- and y-axis separately
+        lineChart.setPinchZoom(false);
+
+    }
+
+
+    private void setUpPieChart() {
+        mChart = (PieChart) findViewById(R.id.chart1);
+        mChart.getDescription().setEnabled(false);
+        mChart.setExtraOffsets(5, 50, 5, 5);
+
+        mChart.setDragDecelerationFrictionCoef(0.95f);
+
+        mChart.setDrawHoleEnabled(true);
+        mChart.setHoleColor(Color.WHITE);
+        mChart.setUsePercentValues(true);
+        mChart.setCenterTextColor(Color.WHITE);
+        mChart.setTransparentCircleColor(Color.WHITE);
+        mChart.setTransparentCircleAlpha(110);
+        mChart.invalidate();
+        mChart.setHoleRadius(40f);
+        mChart.setTransparentCircleRadius(35f);
+        mChart.setDrawCenterText(true);
+        //mChart.setRotationAngle(0);
+        // enable rotation of the chart by touch
+        // mChart.setRotationEnabled(true);
+        mChart.setHighlightPerTapEnabled(true);
+        mChart.animateY(1400, Easing.EasingOption.EaseInSine);
+        //mChart.getLegend().setWordWrapEnabled(true);
+        // mChart.setUnit(" €");
+        // mChart.setDrawUnitsInChart(true);
+        // add a selection listener
+        // mChart.setOnChartValueSelectedListener(this);
+    }
+
+    private void setLineChartData() {
+
+
+        ArrayList<Entry> incomingValues = new ArrayList<>();
+        ArrayList<Entry> outgoingValues = new ArrayList<>();
+
+        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+       /* prefs.edit().putInt("outgoing."+1,0).apply();
+        prefs.edit().putInt("outgoing."+2,0).apply();
+        prefs.edit().putInt("outgoing."+3,0).apply();
+        prefs.edit().putInt("outgoing."+4,0).apply();
+        prefs.edit().putInt("outgoing."+5,0).apply();
+        prefs.edit().putInt("outgoing."+6,0).apply();
+        prefs.edit().putInt("outgoing."+7,0).apply();*/
+
+        final HashMap<Integer, String> numMap = new HashMap<>();
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.DAY_OF_YEAR, -6);
+        for (int i = 1; i < 8; i++) {
+            SimpleDateFormat df = new SimpleDateFormat("MMM dd", Locale.ENGLISH);
+            numMap.put(i, String.format("%s", df.format(calendar.getTime())));
+            calendar.add(Calendar.DAY_OF_YEAR, +1);
+        }
+
+        XAxis xAxis = lineChart.getXAxis();
+        xAxis.setDrawGridLines(false);
+        xAxis.setLabelCount(7);
+        xAxis.setGranularity(1f);
+        xAxis.setDrawAxisLine(true);
+        xAxis.setValueFormatter(new IAxisValueFormatter() {
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+                return numMap.get((int) value);
+            }
+        });
+        int day = calendar.get(Calendar.DAY_OF_WEEK);
+        for (int i = 0; i < 7; i++) {
+            day--;
+            if (day < 1) {
+                day = 7;
+            }
+        }
+
+        for (int i = 1; i < 8; i++) {
+            incomingValues.add(new Entry(i, prefs.getInt("incoming." + day, 0)));
+            outgoingValues.add(new Entry(i, prefs.getInt("outgoing." + day, 0)));
+            day++;
+            if (day > 7) {
+                day = 1;
+            }
+        }
+
+
+        LineDataSet incoming;
+        LineDataSet outgoing;
+
+        if (lineChart.getData() != null &&
+                lineChart.getData().getDataSetCount() > 0) {
+            incoming = (LineDataSet) lineChart.getData().getDataSetByIndex(0);
+            incoming.setValues(incomingValues);
+            outgoing = (LineDataSet) lineChart.getData().getDataSetByIndex(1);
+            outgoing.setValues(outgoingValues);
+            lineChart.getData().notifyDataChanged();
+            lineChart.notifyDataSetChanged();
+        } else {
+            outgoing = new LineDataSet(outgoingValues, "Outgoing calls");
+            // set the line to be drawn like this "- - - - - -"
+            outgoing.setColor(Color.rgb(51, 0, 102));
+            outgoing.setCircleColor(Color.rgb(51, 0, 102));
+            outgoing.setLineWidth(1f);
+            outgoing.setCircleRadius(3f);
+            outgoing.setDrawCircleHole(false);
+            outgoing.setValueTextSize(9f);
+            outgoing.setDrawFilled(true);
+            outgoing.setFormLineWidth(1f);
+            //outgoing.setFormLineDashEffect(new DashPathEffect(new float[]{10f, 5f}, 0f));
+            //outgoing.setFormSize(15.f);
+
+            // create a dataset and give it a type
+            incoming = new LineDataSet(incomingValues, "Incoming calls");
+            // set the line to be drawn like this "- - - - - -"
+            incoming.setColor(Color.rgb(204, 0, 204));
+            incoming.setCircleColor(Color.rgb(204, 0, 204));
+            incoming.setLineWidth(1f);
+            incoming.setCircleRadius(3f);
+            incoming.setDrawCircleHole(false);
+            incoming.setValueTextSize(9f);
+            incoming.setDrawFilled(true);
+            incoming.setFormLineWidth(1f);
+            //incoming.setFormLineDashEffect(new DashPathEffect(new float[]{10f, 5f}, 0f));
+            //incoming.setFormSize(15.f);
+
+            if (Build.VERSION.SDK_INT >= 18) {
+                // fill drawable only supported on api level 18 and above
+            } else {
+                incoming.setFillColor(Color.BLACK);
+                outgoing.setFillColor(Color.BLACK);
+            }
+
+            ArrayList<ILineDataSet> dataSets = new ArrayList<ILineDataSet>();
+            dataSets.add(incoming); // add the datasets
+            dataSets.add(outgoing);
+            // create a data object with the datasets
+            LineData data = new LineData(dataSets);
+
+            // set data
+            lineChart.setData(data);
+            lineChart.notifyDataSetChanged();
+        }
+    }
+
+
+    private void setData(int[] colorCodes) {
 
         ArrayList<PieEntry> entries = new ArrayList<>();
 
@@ -263,10 +426,10 @@ public class AllStatisticsView extends AppCompatActivity  {
         DecimalFormat format = new DecimalFormat();
         format.setDecimalSeparatorAlwaysShown(false);
 
-        float inc = cse.getIncomingCallCount()/total*100;
-        float out = cse.getOutgoingCallCount()/total*100;
-       // int typed = cse.getTypedNoteCount();///total*100;
-       // float rem = cse.getRemindersAddedCount()/total*100;
+        float inc = cse.getIncomingCallCount() / total * 100;
+        float out = cse.getOutgoingCallCount() / total * 100;
+        // int typed = cse.getTypedNoteCount();///total*100;
+        // float rem = cse.getRemindersAddedCount()/total*100;
         entries.add(new PieEntry(inc, inc));
         entries.add(new PieEntry(out, out));
 

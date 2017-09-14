@@ -14,6 +14,7 @@ import android.widget.Toast;
 import com.example.juseris.aftercallnote.Activities.MainActivity;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Models.ContactEntity;
+import com.example.juseris.aftercallnote.Models.IGenericItem;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +32,7 @@ public class DataExportation {
     Database db;
     StringBuilder sbIncoming;
     StringBuilder sbNotes;
+
     public DataExportation(Context ctx) {
         context = ctx;
         db = new Database(context);
@@ -66,11 +68,12 @@ public class DataExportation {
         sbNotes.append('\n');
     }
 
-    public void exportNote(ClassNote note){
+    public void exportNote(ClassNote note) {
         CachedFileProvider provider = new CachedFileProvider();
-        context.startActivity(Intent.createChooser(provider.getSendEmailIntent(note.ExportString(),"call_data.csv"), "Send mail..."));
+        context.startActivity(Intent.createChooser(provider.getSendEmailIntent(note.ExportString(), "call_data.csv"), "Send mail..."));
     }
-    public void exportBoth(){
+
+    public void exportBoth() {
         Log.i("Send email", "");
         try {
             File folder = new File(Environment.getExternalStorageDirectory()
@@ -80,18 +83,18 @@ public class DataExportation {
                 var = folder.mkdir();
 
             for (Integer i = 0; i < db.getData().size(); i++) {
-                sbNotes.append(db.getData().get(i).toExcel()).append("\n");
+                sbNotes.append(((ClassNote) db.getData().get(i)).toExcel()).append("\n");
             }
-            for(ContactEntity call : getIncomingCalls()){
+            for (ContactEntity call : getIncomingCalls()) {
                 sbIncoming.append(call.toExcel()).append("\n");
             }
 
             try {
                 CachedFileProvider provider = new CachedFileProvider();
-                CachedFileProvider.createCachedFile(context, "call_data.csv","incoming_calls.csv"
-                        , sbNotes.toString(),sbIncoming.toString());
+                CachedFileProvider.createCachedFile(context, "call_data.csv", "incoming_calls.csv"
+                        , sbNotes.toString(), sbIncoming.toString());
                 context.startActivity(Intent.createChooser
-                        (provider.getMultipleAttachmentIntent("call_data.csv","incoming_calls.csv"), "Send mail..."));
+                        (provider.getMultipleAttachmentIntent("call_data.csv", "incoming_calls.csv"), "Send mail..."));
                 //finish();
             } catch (ActivityNotFoundException ex) {
                 Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show();
@@ -111,13 +114,13 @@ public class DataExportation {
                 var = folder.mkdir();
 
             for (Integer i = 0; i < db.getData().size(); i++) {
-                sbNotes.append(db.getData().get(i).toExcel()).append("\n");
+                sbNotes.append(((ClassNote) db.getData().get(i)).toExcel()).append("\n");
             }
 
             try {
                 CachedFileProvider provider = new CachedFileProvider();
-                CachedFileProvider.createCachedFile(context, "call_data.csv","", sbNotes.toString(),"");
-                context.startActivity(Intent.createChooser(provider.getSendEmailIntent("","call_data.csv"), "Send mail..."));
+                CachedFileProvider.createCachedFile(context, "call_data.csv", "", sbNotes.toString(), "");
+                context.startActivity(Intent.createChooser(provider.getSendEmailIntent("", "call_data.csv"), "Send mail..."));
                 //finish();
             } catch (ActivityNotFoundException ex) {
                 Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show();
@@ -128,7 +131,7 @@ public class DataExportation {
     }
 
 
-    public ArrayList<ContactEntity> getIncomingCalls(){
+    public ArrayList<ContactEntity> getIncomingCalls() {
         ArrayList<ContactEntity> calls = new ArrayList<>();
         if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
             Cursor phones = context.getContentResolver().query(CallLog.Calls.CONTENT_URI,
@@ -170,7 +173,7 @@ public class DataExportation {
         return calls;
     }
 
-    public void exportIncomingCalls(){
+    public void exportIncomingCalls() {
 
         try {
             File folder = new File(Environment.getExternalStorageDirectory()
@@ -180,12 +183,12 @@ public class DataExportation {
                 var = folder.mkdir();
 
             String allLines = "";
-            if(!db.getIncomingCalls().isEmpty()) {
+            if (!db.getIncomingCalls().isEmpty()) {
                 for (ContactEntity call : db.getIncomingCalls()) {
                     allLines += call.exportString() + "\n";
                     sbIncoming.append(call.toExcel()).append("\n");
                 }
-            }else{
+            } else {
                 for (ContactEntity call : getIncomingCalls()) {
                     allLines += call.exportString() + "\n";
                     sbIncoming.append(call.toExcel()).append("\n");
@@ -193,8 +196,8 @@ public class DataExportation {
             }
             try {
                 CachedFileProvider provider = new CachedFileProvider();
-                CachedFileProvider.createCachedFile(context, "incoming_calls.csv","", sbIncoming.toString(),"");
-                context.startActivity(Intent.createChooser(provider.getSendEmailIntent("","incoming_calls.csv"), "Send mail..."));
+                CachedFileProvider.createCachedFile(context, "incoming_calls.csv", "", sbIncoming.toString(), "");
+                context.startActivity(Intent.createChooser(provider.getSendEmailIntent("", "incoming_calls.csv"), "Send mail..."));
                 //finish();
             } catch (ActivityNotFoundException ex) {
                 Toast.makeText(context, "Something went wrong", Toast.LENGTH_SHORT).show();
@@ -211,7 +214,7 @@ public class DataExportation {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(Long.parseLong(callTime));
             tm = formatter.format(calendar.getTime());
-        }catch (Exception e) {
+        } catch (Exception e) {
             tm = "";
         }
         return tm;
@@ -230,9 +233,9 @@ public class DataExportation {
             //Will Throw exception!
             //do something! anything to handle the exception.
         }
-        String time = String.valueOf(seconds)+" s";
-        if(minutes != 0){
-            time = minutes+" min "+seconds+" s";
+        String time = String.valueOf(seconds) + " s";
+        if (minutes != 0) {
+            time = minutes + " min " + seconds + " s";
         }
         return time;
     }

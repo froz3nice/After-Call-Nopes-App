@@ -25,6 +25,7 @@ import android.widget.TextView;
 import com.example.juseris.aftercallnote.Adapters.AllRemindersAdapter;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Database;
+import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.example.juseris.aftercallnote.R;
 
 import java.text.DateFormat;
@@ -38,17 +39,23 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Locale;
 
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
+
 public class RemindersList extends AppCompatActivity {
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_reminders_list);
         setTitle("All reminders");
-        ArrayList<ClassNote> noteList = new ArrayList<>();
         Database db = new Database(getApplicationContext());
         Toolbar toolbar = (Toolbar) findViewById(R.id.remindersToolbar);
-        RecyclerView reminderList = (RecyclerView) findViewById(R.id.reminderList);
+        RecyclerView reminderList = (RecyclerView) findViewById(R.id.ac_main_listView);
         setSupportActionBar(toolbar);
         ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
 
@@ -61,66 +68,60 @@ public class RemindersList extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
-        noteList = db.getData();
-        for (Iterator<ClassNote> iterator = noteList.iterator(); iterator.hasNext(); ) {
-            ClassNote value = iterator.next();
-            if (value.getReminder().equals("")) {
-                iterator.remove();
+        ArrayList<IGenericItem> noteList = db.getData();
+        ArrayList<IGenericItem> noteSynced = db.getSyncedData();
+        noteList.addAll(noteSynced);
+        for (Iterator<IGenericItem> iterator = noteList.iterator(); iterator.hasNext(); ) {
+            IGenericItem value = iterator.next();
+            if (value instanceof ClassNote) {
+                if (((ClassNote) value).getReminder().equals("")) {
+                    iterator.remove();
+                }
             }
         }
         if (!noteList.isEmpty()) {
             findViewById(R.id.noEvents).setVisibility(View.GONE);
         }
-        Collections.reverse(noteList);
-        ArrayList<ClassNote> listWithSectionHeaders = new ArrayList<>();
+        // Collections.reverse(noteList);
+        ArrayList<IGenericItem> listWithSectionHeaders = new ArrayList<>();
         Boolean upcomingHeader = false;
         Boolean historyHeader = false;
+        sortNotesByDate(noteList);
+        //Date date2 = parseOrReturnNull(((ClassNote) noteList.get(0)).getReminder());
 
-        Collections.sort(noteList,new Comparator<ClassNote>(){
-            @Override
-            public int compare(ClassNote a, ClassNote b) {
-                DateFormat formatter = new SimpleDateFormat("yyyy MMM dd HH:mm",Locale.ENGLISH);
+
+        for (IGenericItem note : noteList) {
+            if (note instanceof ClassNote) {
+                String str_date = ((ClassNote) note).getReminder();
+                Date date;
+                DateFormat formatter = new SimpleDateFormat("yyyy MMM dd HH:mm", Locale.ENGLISH);
                 try {
-                    Date date1 = formatter.parse(a.getReminder());
-                    Date date2 = formatter.parse(b.getReminder());
-                    return date2.compareTo(date1);
+
+                    date = formatter.parse(str_date);
+                    if (!upcomingHeader) {
+                        Date curDate = Calendar.getInstance().getTime();
+                        if (date.compareTo(curDate) > 0) {
+                            upcomingHeader = true;
+                            ClassNote temp = new ClassNote();
+                            temp.setName("Upcoming");
+                            temp.isSection = true;
+                            listWithSectionHeaders.add(temp);
+                        }
+                    }
+                    if (!historyHeader) {
+                        if (date.compareTo(Calendar.getInstance().getTime()) <= 0) {
+                            historyHeader = true;
+                            ClassNote temp = new ClassNote();
+                            temp.setName("History");
+                            temp.isSection = true;
+                            listWithSectionHeaders.add(temp);
+                        }
+                    }
                 } catch (ParseException e) {
                     e.printStackTrace();
-                    return 1;
                 }
+                listWithSectionHeaders.add(note);
             }
-        });
-
-        for(ClassNote note :noteList){
-            String str_date = note.getReminder();
-            Date date ;
-            DateFormat formatter = new SimpleDateFormat("yyyy MMM dd HH:mm",Locale.ENGLISH);
-            try {
-
-                date = formatter.parse(str_date);
-                if(!upcomingHeader) {
-                    Date curDate = Calendar.getInstance().getTime();
-                    if (date.compareTo(curDate) > 0) {
-                        upcomingHeader = true;
-                        ClassNote temp = new ClassNote();
-                        temp.setName("Upcoming");
-                        temp.isSection = true;
-                        listWithSectionHeaders.add(temp);
-                    }
-                }
-                if(!historyHeader){
-                    if (date.compareTo(Calendar.getInstance().getTime()) <= 0) {
-                        historyHeader = true;
-                        ClassNote temp = new ClassNote();
-                        temp.setName("History");
-                        temp.isSection = true;
-                        listWithSectionHeaders.add(temp);
-                    }
-                }
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-            listWithSectionHeaders.add(note);
         }
 
         AllRemindersAdapter listAdapter = new AllRemindersAdapter(RemindersList.this, listWithSectionHeaders);
@@ -133,12 +134,42 @@ public class RemindersList extends AppCompatActivity {
         reminderList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //CustomAdapter.ViewHolder holder = (CustomAdapter.ViewHolder) view.getTag();
+                //MainAdapter.ViewHolder holder = (MainAdapter.ViewHolder) view.getTag();
                 Intent intent = new Intent(getApplicationContext(), MainListChildItem.class);
                 intent.putExtra("classNoteobj", listAdapter.getItem(position));
                 startActivity(intent);
             }
         });*/
+    }
+
+    public Date parseOrReturnNull(String date) {
+        try {
+            DateFormat formatter = new SimpleDateFormat("yyyy MMM dd HH:mm", Locale.US);
+            return formatter.parse(date);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
+    private void sortNotesByDate(ArrayList<IGenericItem> noteList) {
+        Collections.sort(noteList, new Comparator<IGenericItem>() {
+            @Override
+            public int compare(IGenericItem b, IGenericItem a) {
+                Date date2 = parseOrReturnNull(((ClassNote) b).getReminder());
+                Date date1 = parseOrReturnNull(((ClassNote) a).getReminder());
+                if (date1 == null) {
+                    if (date2 == null) {
+                        return 0;
+                    }
+                    return 1;
+                }
+                if (date2 == null) {
+                    return -1;
+                }
+                return date2.compareTo(date1);
+            }
+        });
+        Collections.reverse(noteList);
     }
 
     @Override

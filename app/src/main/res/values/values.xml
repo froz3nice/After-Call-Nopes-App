@@ -2,4 +2,6 @@
 <resources>
     <color name="foreground_material_light">#fdfafa</color>
     <color name="background_material_light">#efeded</color>
+    <attr format="string" name="fontPath"/>
+    <item name="calligraphy_tag_id" type="id"/>
 </resources>

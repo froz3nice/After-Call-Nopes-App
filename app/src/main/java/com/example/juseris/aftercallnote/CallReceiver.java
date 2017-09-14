@@ -2,26 +2,19 @@ package com.example.juseris.aftercallnote;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.util.Log;
-import android.widget.Toast;
 
 import com.example.juseris.aftercallnote.Activities.ActivityPopupAfter;
 import com.example.juseris.aftercallnote.Activities.ActivityPopupBefore;
-import com.example.juseris.aftercallnote.Models.ClassSettings;
 import com.example.juseris.aftercallnote.Models.ContactsEntity;
-import com.google.firebase.FirebaseApp;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * Created by juseris on 6/19/2017.
@@ -30,18 +23,24 @@ import java.util.Map;
 public class CallReceiver extends PhoneCallReceiver {
 
     @Override
-    protected void onIncomingCallStarted(final Context ctx,final String number, Date start) {
-        boolean checkIncoming = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean("incomingCheckBox",true);
-        if(catchCall(ctx,number) && checkIncoming) {
+    protected void onIncomingCallStarted(final Context ctx, Date start) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        boolean checkIncoming = prefs.getBoolean("incomingCheckBox", true);
+        if (catchCall(ctx, prefs.getString("LastActiveNr", "")) && checkIncoming) {
             Handler handler = new Handler();
             handler.postDelayed(new Runnable() {
                 public void run() {
                     //Toast.makeText(context, "hey", Toast.LENGTH_SHORT).show();
                     Database db = new Database(ctx);
-                    if (!db.getDataByNumber(number).isEmpty()) {
+
+                    boolean isNotEmpty = !db.getDataByNumber(prefs.getString("LastActiveNr", "")).isEmpty() ||
+                            !db.getSyncedNotesByNumber(prefs.getString("LastActiveNr", "")).isEmpty() ||
+                            !db.getPrestashopByNr(prefs.getString("LastActiveNr", ""), prefs.getString("LastActiveNr", "")).isEmpty() ||
+                            !db.getNewPrestaByNr(prefs.getString("LastActiveNr", ""), prefs.getString("LastActiveNr", "")).isEmpty();
+                    if (isNotEmpty) {
                         Intent popUpIntent = new Intent(ctx, ActivityPopupBefore.class);
                         popUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        popUpIntent.putExtra("NUMBER", number);
+                        popUpIntent.putExtra("NUMBER", prefs.getString("LastActiveNr", ""));
                         ctx.startActivity(popUpIntent);
                     }
                 }
@@ -50,17 +49,24 @@ public class CallReceiver extends PhoneCallReceiver {
     }
 
     @Override
-    protected void onOutgoingCallStarted(final Context ctx,final String number, Date start) {
-        boolean checkOutgoing = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean("outgoingCheckBox",false);
+    protected void onOutgoingCallStarted(final Context ctx, Date start) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
 
-        if(catchCall(ctx,number) && checkOutgoing) {
+        boolean checkOutgoing = prefs.getBoolean("outgoingCheckBox", false);
+
+        if (catchCall(ctx, prefs.getString("LastActiveNr", "")) && checkOutgoing) {
             Handler han = new Handler();
             han.postDelayed(new Runnable() {
                 public void run() {
                     Database db = new Database(ctx);
-                    if (!db.getDataByNumber(number).isEmpty()) {
+                    boolean isNotEmpty = !db.getDataByNumber(prefs.getString("LastActiveNr", "")).isEmpty() ||
+                            !db.getSyncedNotesByNumber(prefs.getString("LastActiveNr", "")).isEmpty() ||
+                            !db.getPrestashopByNr(prefs.getString("LastActiveNr", ""), prefs.getString("LastActiveNr", "")).isEmpty() ||
+                            !db.getNewPrestaByNr(prefs.getString("LastActiveNr", ""), prefs.getString("LastActiveNr", "")).isEmpty();
+                    if (isNotEmpty) {
                         Intent popUpIntent = new Intent(ctx, ActivityPopupBefore.class);
                         popUpIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        popUpIntent.putExtra("NUMBER", prefs.getString("LastActiveNr", ""));
                         ctx.startActivity(popUpIntent);
                     }
                 }
@@ -69,23 +75,27 @@ public class CallReceiver extends PhoneCallReceiver {
     }
 
     @Override
-    protected void onIncomingCallEnded(Context ctx, String number, long start, Date end) {
-        boolean checkIncoming = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean("incomingCheckBox",true);
-        if(catchCall(ctx,number) && checkIncoming) {
-            popup_After_Show(start, end, ctx);
+    protected void onIncomingCallEnded(Context ctx, long start, Date end) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+
+        boolean checkIncoming = prefs.getBoolean("incomingCheckBox", true);
+        if (catchCall(ctx, prefs.getString("LastActiveNr", "")) && checkIncoming) {
+            popupAfterShow(start, end, ctx);
         }
         sendBroadcast(ctx);
-        pushIncomingToDatabases(number,ctx,start,end);
+        pushIncomingToDatabases(prefs.getString("LastActiveNr", ""), ctx, start, end);
     }
 
     @Override
-    protected void onOutgoingCallEnded(Context ctx, String number, long start, Date end) {
-        boolean checkOutgoing = PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean("outgoingCheckBox",false);
-        if(catchCall(ctx,number) && checkOutgoing) {
-            popup_After_Show(start, end, ctx);
+    protected void onOutgoingCallEnded(Context ctx, long start, Date end) {
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+
+        boolean checkOutgoing = prefs.getBoolean("outgoingCheckBox", false);
+        if (catchCall(ctx, prefs.getString("LastActiveNr", "")) && checkOutgoing) {
+            popupAfterShow(start, end, ctx);
         }
         sendBroadcast(ctx);
-        pushOutgoingToDatabases(number,ctx,start,end);
+        pushOutgoingToDatabases(prefs.getString("LastActiveNr", ""), ctx, start, end);
     }
 
     @Override
@@ -93,7 +103,8 @@ public class CallReceiver extends PhoneCallReceiver {
         sendBroadcast(ctx);
     }
 
-    public boolean catchCall(Context ctx,String number){
+    public boolean catchCall(Context ctx, String number) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
         Calendar calendar = Calendar.getInstance();
         int day = calendar.get(Calendar.DAY_OF_WEEK);
         String weekDay = "";
@@ -120,35 +131,18 @@ public class CallReceiver extends PhoneCallReceiver {
                 weekDay = "Saturday";
                 break;
         }
-        boolean isDayChecked = PreferenceManager.getDefaultSharedPreferences(ctx)
-                .getBoolean(weekDay, true);
-        boolean ifChecked = PreferenceManager.getDefaultSharedPreferences(ctx)
-                .getBoolean("catchCall", true);
-        boolean isNumberChecked = PreferenceManager.getDefaultSharedPreferences(ctx)
-                .getBoolean(number, true);
+        boolean isDayChecked = prefs.getBoolean(weekDay, true);
+        boolean ifChecked = prefs.getBoolean("catchCall", true);
+        boolean isNumberChecked = prefs.getBoolean(number, true);
         return isDayChecked && ifChecked && isNumberChecked;
     }
 
 
-    private void popup_After_Show(long dateStart,Date dateEnd,final Context ctx) {
-        ClassSettings Settings = new ClassSettings(ctx);
+    private void popupAfterShow(long dateStart, Date dateEnd, final Context ctx) {
         long callTime = (dateEnd.getTime() - dateStart) / 1000;
-        SimpleDateFormat df = new SimpleDateFormat("MMMM dd HH:mm", Locale.US);
-        String _date = String.format("%s", df.format(dateEnd));
-        database = new Database(ctx);
-
-        Settings.setDate(_date);
-        String time = Settings.getCallTime();
-        if (time.equals("")) {
-            time += callTime;
-        } else {
-            time += ";" + callTime;
-        }
-        Settings.setCallTime(time);
-
-        setNumberToSharedPref(ctx);
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
+        int time = (int) callTime;
+        PreferenceManager.getDefaultSharedPreferences(ctx).edit().putString("callTime", String.valueOf(time)).apply();
+        new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 PreferenceManager.getDefaultSharedPreferences(ctx)
@@ -161,50 +155,89 @@ public class CallReceiver extends PhoneCallReceiver {
     }
 
     private Database database;
-    private void pushIncomingToDatabases(String number,Context ctx, long start, Date end){
+
+    private void pushIncomingToDatabases(String number, Context ctx, long start, Date end) {
         database = new Database(ctx);
         long callTime = (end.getTime() - start) / 1000;
         int time = (int) callTime;
-        database.createOrUpdateStatistics(fixNumber(number), 1, 0, 0, 0, time, 0);
+        database.createOrUpdateStatistics(Utils.fixNumber(number), 1, 0, 0, 0, time, 0);
         String _date = getCallTime(System.currentTimeMillis());
         database.insertIncomingCall(new ContactsEntity
-                (getContactName(ctx,number),number,_date,getCallDuration(time)));
-        FirebaseApp.initializeApp(ctx);
+                (getContactName(ctx, number), number, _date, getCallDuration(time)));
+        DatabaseReference myRef = Utils.getDatabase().getReference();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         String email = "";
         if (user != null) {
             email = user.getEmail();
             String fixedEmail = email.replace(".", ",");
-            FirebaseDatabase db = FirebaseDatabase.getInstance();
-            DatabaseReference myRef = db.getReference();
             final DatabaseReference userRef = myRef.child("IncomingCalls").child(fixedEmail);
             userRef.push().setValue(new ContactsEntity
-                    (getContactName(ctx,number),number,_date,getCallDuration(time)));
+                    (getContactName(ctx, number), number, _date, getCallDuration(time)));
         }
+        //linear chart statistics
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        Calendar calendar = Calendar.getInstance();
+        int today = calendar.get(Calendar.DAY_OF_WEEK);
+        int tomorrow;
+        if (today == 7) {
+            tomorrow = 1;
+        } else {
+            tomorrow = today + 1;
+        }
+        //for stats in linear graph
+        if (prefs.getInt("incomingTemp." + today, 0) != 0) {
+            prefs.edit().putInt("incoming." + today, 0).apply();
+            prefs.edit().putInt("incomingTemp." + today, 0).apply();
+        }
+        //prefs.edit().putInt("outgoing."+tomorrow,0).apply();
+        prefs.edit().putInt("incoming." + today, prefs.getInt("incoming." + today, 0) + 1).apply();
+        if (prefs.getInt("incoming." + tomorrow, 0) != 0) {
+            prefs.edit().putInt("incomingTemp." + tomorrow, prefs.getInt("incoming." + tomorrow, 0)).apply();
+        }
+
     }
 
-    private void pushOutgoingToDatabases(String number,Context ctx, long start, Date end){
+    private void pushOutgoingToDatabases(String number, Context ctx, long start, Date end) {
         long callTime = (end.getTime() - start) / 1000;
         int time = (int) callTime;
-        if(time < 5){
+        if (time < 5) {
             time = 0;
         }
         String _date = getCallTime(System.currentTimeMillis());
         database = new Database(ctx);
-        database.createOrUpdateStatistics(fixNumber(number), 0, 1, 0, 0, 0, time);
+        database.createOrUpdateStatistics(Utils.fixNumber(number), 0, 1, 0, 0, 0, time);
         database.insertOutgoingCall((new ContactsEntity
-                (getContactName(ctx,number),number,_date,getCallDuration(time))));
-        FirebaseApp.initializeApp(ctx);
+                (getContactName(ctx, number), number, _date, getCallDuration(time))));
+        DatabaseReference myRef = Utils.getDatabase().getReference();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         String email = "";
         if (user != null) {
             email = user.getEmail();
             String fixedEmail = email.replace(".", ",");
-            FirebaseDatabase db = FirebaseDatabase.getInstance();
-            DatabaseReference myRef = db.getReference();
             final DatabaseReference userRef = myRef.child("OutgoingCalls").child(fixedEmail);
             userRef.push().setValue(new ContactsEntity
-                    (getContactName(ctx,number),number,_date,getCallDuration(time)));
+                    (getContactName(ctx, number), number, _date, getCallDuration(time)));
+        }
+
+        //linear chart statistics
+        final SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        Calendar calendar = Calendar.getInstance();
+        int today = calendar.get(Calendar.DAY_OF_WEEK);
+        int tomorrow;
+        if (today == 7) {
+            tomorrow = 1;
+        } else {
+            tomorrow = today + 1;
+        }
+
+        if (prefs.getInt("outgoingTemp." + today, 0) != 0) {
+            prefs.edit().putInt("outgoing." + today, 0).apply();
+            prefs.edit().putInt("outgoingTemp." + today, 0).apply();
+        }
+        //prefs.edit().putInt("outgoing."+tomorrow,0).apply();
+        prefs.edit().putInt("outgoing." + today, prefs.getInt("outgoing." + today, 0) + 1).apply();
+        if (prefs.getInt("outgoing." + tomorrow, 0) != 0) {
+            prefs.edit().putInt("outgoingTemp." + tomorrow, prefs.getInt("outgoing." + tomorrow, 0)).apply();
         }
     }
 

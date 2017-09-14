@@ -1,29 +1,35 @@
 package com.example.juseris.aftercallnote.Adapters;
 
-import android.content.ClipData;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ScaleDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.BaseAdapter;
 import android.widget.ImageView;
-import android.widget.PopupMenu;
 import android.widget.TextView;
 
-import com.example.juseris.aftercallnote.Activities.MainActivity;
 import com.example.juseris.aftercallnote.Activities.MainListChildItem;
-import com.example.juseris.aftercallnote.Activities.RemindersList;
+import com.example.juseris.aftercallnote.Database;
+import com.example.juseris.aftercallnote.Models.CategoriesAndColors;
 import com.example.juseris.aftercallnote.Models.ClassNote;
+import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.example.juseris.aftercallnote.R;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * Created by juseris on 3/17/2017.
@@ -31,48 +37,63 @@ import java.util.ArrayList;
 
 public class AllRemindersAdapter extends RecyclerView.Adapter<AllRemindersAdapter.ItemViewHolder> {
 
+    private Database database;
+
     class ItemViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
-        TextView text1;
-        TextView text2;
-        TextView text3;
-        TextView text4;
-        TextView title;
-        ImageView overFlow;
+        TextView name;
+        TextView note;
+        TextView time;
+        TextView reminder;
+        TextView category;
+        TextView friendEmail;
+        ImageView text;
+        ImageView call;
         int realPosition;
-        View divider;
+        TextView title;
+
+        int collapsedHeight, expandedHeight;
+
+        //View divider;
         public ItemViewHolder(View itemView) {
             super(itemView);
             itemView.setOnClickListener(this);
-            text1 = (TextView) itemView.findViewById(R.id.text1);
-            text2 = (TextView) itemView.findViewById(R.id.text2);
-            text3 = (TextView) itemView.findViewById(R.id.text3);
-            text4 = (TextView) itemView.findViewById(R.id.text4);
+            name = (TextView) itemView.findViewById(R.id.name);
+            note = (TextView) itemView.findViewById(R.id.note);
+            friendEmail = (TextView) itemView.findViewById(R.id.friendEmail);
+            time = (TextView) itemView.findViewById(R.id.time);
+            reminder = (TextView) itemView.findViewById(R.id.reminder);
+            category = (TextView) itemView.findViewById(R.id.category);
+            text = (ImageView) itemView.findViewById(R.id.textToContact);
+            call = (ImageView) itemView.findViewById(R.id.callToContact);
             title = (TextView) itemView.findViewById(R.id.text);
-            overFlow = (ImageView) itemView.findViewById(R.id.overFlow);
-            divider = itemView.findViewById(R.id.divider);
+            //overFlow = (ImageView) itemView.findViewById(R.id.overFlow);
+            // divider = itemView.findViewById(R.id.divider);
         }
 
         @Override
         public void onClick(View view) {
             Intent intent = new Intent(context, MainListChildItem.class);
-            intent.putExtra("classNoteobj", objects.get(getAdapterPosition()));
+            intent.putExtra("classNoteobj", ((ClassNote) objects.get(getAdapterPosition())));
             context.startActivity(intent);//;startActivityForResult(intent, 0xe420);
         }
     }
+
     private LayoutInflater inflater;
-    private ArrayList<ClassNote> objects;
+    private ArrayList<IGenericItem> objects;
     private Context context;
-    public AllRemindersAdapter(Context context, ArrayList<ClassNote> objects) {
+
+    public AllRemindersAdapter(Context context, ArrayList<IGenericItem> objects) {
         this.objects = objects;
         this.context = context;
         inflater = LayoutInflater.from(context);
+        database = new Database(context);
     }
 
     public int getCount() {
         return objects.size();
     }
 
-    public ClassNote getItem(int position) {
+    public IGenericItem getItem(int position) {
         return objects.get(position);
     }
 
@@ -83,20 +104,20 @@ public class AllRemindersAdapter extends RecyclerView.Adapter<AllRemindersAdapte
 
     @Override
     public int getItemViewType(int position) {
-        if(objects.get(position).isSection) {
+        if (((ClassNote) objects.get(position)).isSection) {
             return 0;
-        }else{
+        } else {
             return 1;
         }
     }
 
     @Override
     public ItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        if(viewType == 1) {
-            View convertView = inflater.inflate(R.layout.main_list_item, parent, false);
+        if (viewType == 1) {
+            View convertView = inflater.inflate(R.layout.list_item_main, parent, false);
 
             return new ItemViewHolder(convertView);
-        }else{
+        } else {
             View convertView = inflater.inflate(R.layout.section_header, parent, false);
             convertView.setEnabled(false);
             convertView.setOnClickListener(null);
@@ -108,80 +129,79 @@ public class AllRemindersAdapter extends RecyclerView.Adapter<AllRemindersAdapte
 
     @Override
     public void onBindViewHolder(ItemViewHolder holder, int position) {
-        if(!objects.get(position).isSection) {
-                if (objects == null || objects.size() == 0) {
-                    //holder.text1.setText("No Results");
+        final ClassNote item = ((ClassNote) objects.get(holder.getAdapterPosition()));
+        if (!item.isSection) {
+
+            if (objects == null || objects.size() == 0) {
+                //holder.name.setText("No Results");
+            } else {
+                if (!item.getName().equals("")) {
+                    holder.name.setText(item.getName());
                 } else {
-                    if (!objects.get(position).getName().equals("")) {
-                        holder.text1.setText(objects.get(position).getName());
-                    } else {
-                        holder.text1.setText(objects.get(position).getPhoneNumber());
-                    }
-                    //Log.d("POSITION", String.valueOf(position));
-
-                    int seconds = 0;
-                    int minutes = 0;
-                    try {
-                        seconds = Integer.parseInt(objects.get(position).getCallTime());
-                        while (seconds - 60 >= 0) {
-                            minutes++;
-                            seconds -= 60;
-                        }
-                    } catch (NumberFormatException e) {
-                        //Will Throw exception!
-                        //do something! anything to handle the exception.
-                    }
-                    holder.text2.setText(objects.get(position).getNotes(true));
-                    if (minutes != 0) {
-                        holder.text3.setText(objects.get(position).getCallDate()
-                                + " ; " + minutes + " min " + seconds + " s");
-                    } else {
-                        if (seconds == 0) {
-                            holder.text3.setText(objects.get(position).getCallDate());
-                        } else {
-                            holder.text3.setText(objects.get(position).getCallDate()
-                                    + " ; " + seconds + " s");
-                        }
-                    }
-                    if (!objects.get(position).getReminder().equals("")) {
-                        int imgSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 13
-                                , context.getResources().getDisplayMetrics());
-                        Drawable img = ResourcesCompat.getDrawable(context.getResources(), R.drawable.ic_reminder_icon, null);
-                        img.setBounds(0, 0, imgSize, imgSize);
-                        holder.text4.setCompoundDrawables(img, null, null, null);
-                        // if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
-                        // holder.text4.removeOnLayoutChangeListener(this);
-                        // }
-                        holder.text4.setText(objects.get(position).getReminder()
-                                .substring(5,objects.get(position).getReminder().length()));
-                    } else {
-                        int botPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5
-                                , context.getResources().getDisplayMetrics());
-                        holder.text3.setPadding(0, 0, 0, botPadding);
-                        holder.text4.setVisibility(View.GONE);
-                    }
-                    /*int leftPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 13
-                            , context.getResources().getDisplayMetrics());
-                    holder.text1.setPadding(leftPadding,0,0,0);
-                    holder.text2.setPadding(leftPadding,0,0,0);
-                    holder.text3.setPadding(leftPadding,0,0,0);
-                    holder.text4.setPadding(leftPadding,0,0,0);*/
-
-                    holder.realPosition = position;
-                    holder.overFlow.setVisibility(View.GONE);
-                    if(holder.getAdapterPosition() + 1 < objects.size()){
-                        if(objects.get(holder.getAdapterPosition()+1).isSection){
-                             holder.divider.setVisibility(View.GONE);
-                        }
-                    }
-                   /* if(position == objects.size()-1){
-                         //holder.divider.setVisibility(View.GONE);
-                    }*/
+                    holder.name.setText(item.getPhoneNumber());
                 }
-        }else{
-            holder.title.setText(getItem(position).getName());
+
+                int imgSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12
+                        , context.getResources().getDisplayMetrics());
+                Drawable img = ResourcesCompat.getDrawable(context.getResources(), R.drawable.ic_clock, null);
+                img.setBounds(0, 0, imgSize, imgSize);
+                holder.time.setCompoundDrawables(img, null, null, null);
+                holder.note.setText(item.getNotes(true));
+                holder.note.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Intent intent = new Intent(context, MainListChildItem.class);
+                        intent.putExtra("classNoteobj", item);
+                        context.startActivity(intent);
+                    }
+                });
+                String cat = item.getCategory();
+                boolean hasCategory = !cat.equals("");
+                if (hasCategory) {
+                    Drawable background = holder.category.getBackground();
+                    holder.category.setText(item.getCategoryTitle(context, background));
+                } else {
+                    holder.category.setVisibility(View.GONE);
+                }
+                holder.time.setText(item.getTimeTitle());
+
+                if (item.isSynced() != 0) {
+                    String email = item.getFriendEmail().replace(",", ".");
+                    Drawable img2 = ResourcesCompat.getDrawable(context.getResources(), R.drawable.ic_person, null);
+                    Drawable drawable1 = new ScaleDrawable(img2, 0, imgSize, imgSize).getDrawable();
+                    drawable1.setBounds(0, 0, imgSize, imgSize);
+                    holder.friendEmail.setCompoundDrawables(drawable1, null, null, null);
+                    holder.friendEmail.setText(email);
+                }
+                if (!item.getReminder().equals("")) {
+                    //setting reminder text
+                    Drawable img2 = ResourcesCompat.getDrawable(context.getResources(), R.drawable.ic_reminder_icon, null);
+                    Drawable drawable1 = new ScaleDrawable(img2, 0, imgSize, imgSize).getDrawable();
+                    drawable1.setBounds(0, 0, imgSize, imgSize);
+                    holder.reminder.setCompoundDrawables(drawable1, null, null, null);
+                    holder.reminder.setText(item.getReminder()
+                            .substring(5, item.getReminder().length()));
+                } else {
+                    int botPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5
+                            , context.getResources().getDisplayMetrics());
+                    holder.time.setPadding(0, 0, 0, botPadding);
+                    holder.reminder.setCompoundDrawables(null, null, null, null);
+                    holder.reminder.setVisibility(View.GONE);
+                }
+                holder.realPosition = holder.getAdapterPosition();
+            }
+            holder.realPosition = position;
+            if (holder.getAdapterPosition() + 1 < objects.size()) {
+                if (((ClassNote) objects.get(holder.getAdapterPosition() + 1)).isSection) {
+                    //holder.divider.setVisibility(View.GONE);
+                }
+            }
+
+        } else {
+            holder.title.setText(item.getName());
         }
     }
+
 
     public long getItemId(int position) {
         return position;

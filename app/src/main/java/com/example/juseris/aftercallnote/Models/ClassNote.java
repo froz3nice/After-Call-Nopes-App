@@ -1,42 +1,42 @@
 package com.example.juseris.aftercallnote.Models;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ShapeDrawable;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.support.annotation.IntegerRes;
-import android.support.v4.content.res.ResourcesCompat;
-import android.util.TypedValue;
-import android.widget.TextView;
+import android.support.v4.content.ContextCompat;
 
+import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.R;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
-public class ClassNote implements Parcelable {
+public class ClassNote implements Parcelable,IGenericItem {
 
-    private int ID;
-    private String PhoneNumber;
-    // uzrasas, kuris buvo pridetas
-    private String Notes;
-    // Zmogaus vardas, tas pats kas su last name... prideti buttona editui ir kad keisti varda
-    private String Name;
-    // Zmogaus last name (reik prideti buttona editint informacijai, ir prideti toki field'a
-    private String LastName;
-    // Laikas, kiek buvo kalbeta
-    private String CallTime;
-    // Data, kada buvo pradeta kalbeti
-    private String CallDate;
-    private String Email;
-    private String City;
+    private int id;
+    private String phoneNumber;
+    private String notes;
+    private String name;
+    private String lastName;
+    private String callTime;
+    private String callDate;
+    private String email;
     private int catchCall;
     private String reminder;
     private int isSynced;
     public boolean isSection;
+    private Date dateObject;
+    private String timeTitle;
+    private String categoryTitle;
 
     public String getCategory() {
         return category;
@@ -71,28 +71,28 @@ public class ClassNote implements Parcelable {
     }
 
     public ClassNote(int id) {
-        ID = id;
+        this.id = id;
     }
 
-    public int getID() {
-        return ID;
+    public int getId() {
+        return id;
     }
 
     public void setNotes(String notes) {
-        Notes = notes;
+        this.notes = notes;
     }
     public String getNotes(Boolean Shorted) {
         Integer msgSize = 90;
-        if (Notes == null) return "";
+        if (notes == null) return "";
 
         if (Shorted) {
-            if (Notes.length() < msgSize)
-                return Notes;
+            if (notes.length() < msgSize)
+                return notes;
             else
-                return Notes.substring(0, msgSize);
+                return notes.substring(0, msgSize);
         }
 
-        return Notes;
+        return notes;
     }
 
     public Date getDate(){
@@ -107,39 +107,39 @@ public class ClassNote implements Parcelable {
     }
 
     public void setPhoneNumber(String phoneNumber) {
-        PhoneNumber = phoneNumber;
+        this.phoneNumber = phoneNumber;
     }
 
     public String getPhoneNumber() {
-        if (PhoneNumber == null || PhoneNumber.equalsIgnoreCase("null")) return "";
-        return PhoneNumber;
+        if (phoneNumber == null || phoneNumber.equalsIgnoreCase("null")) return "";
+        return phoneNumber;
     }
 
     public void setName(String name) {
-        Name = name;
+        this.name = name;
     }
 
     public String getName() {
-        if (Name == null || Name.equalsIgnoreCase("null")) return "";
-        return Name;
+        if (name == null || name.equalsIgnoreCase("null")) return "";
+        return name;
     }
 
     public void setCallTime(String callTime) {
-        CallTime = callTime;
+        this.callTime = callTime;
     }
 
     public String getCallTime() {
-        if (CallTime == null || CallTime.equalsIgnoreCase("null")) return "";
-        return CallTime;
+        if (callTime == null || callTime.equalsIgnoreCase("null")) return "";
+        return callTime;
     }
 
     public void setCallDate(String callDate) {
-        CallDate = callDate;
+        this.callDate = callDate;
     }
 
     public String getCallDate() {
-        if (CallDate == null || CallDate.equalsIgnoreCase("null")) return "";
-        return CallDate;
+        if (callDate == null || callDate.equalsIgnoreCase("null")) return "";
+        return callDate;
     }
 
     public void setCatchCall(int catchCall) {
@@ -153,11 +153,11 @@ public class ClassNote implements Parcelable {
     @Override
     public String toString() {
         return String.format("%s @ %s @ %s @ %s @ %s",
-                ID,
-                PhoneNumber,
-                Name,
-                Notes,
-                CallTime);
+                id,
+                phoneNumber,
+                name,
+                notes,
+                callTime);
     }
 
     public String toExcel() {
@@ -183,7 +183,7 @@ public class ClassNote implements Parcelable {
     // Export string (returning phone number, name, date, note)
     public String ExportString() {
         if (isSynced() == 0) {
-            return String.format("Phone number: %s\nName: %s\nDate: %s\nNote: %s\nCategory: %s\n",
+            return String.format("Phone number: %s\nname: %s\nDate: %s\nNote: %s\nCategory: %s\n",
                     getPhoneNumber(),
                     getName(),
                     getCallDate(),
@@ -192,7 +192,7 @@ public class ClassNote implements Parcelable {
             );
         } else {
             String fixedEmail = getFriendEmail().replace(",",".");
-            return String.format("Phone number: %s\nName: %s\nDate: %s\nNote: %s\nCategory: %s\nSynced note with %s\n",
+            return String.format("Phone number: %s\nname: %s\nDate: %s\nNote: %s\nCategory: %s\nSynced note with %s\n",
                     getPhoneNumber(),
                     getName(),
                     getCallDate(),
@@ -204,15 +204,14 @@ public class ClassNote implements Parcelable {
     }
 
     protected ClassNote(Parcel in) {
-        PhoneNumber = in.readString();
-        Notes = in.readString();
-        Name = in.readString();
-        LastName = in.readString();
-        CallTime = in.readString();
-        CallDate = in.readString();
-        Email = in.readString();
-        City = in.readString();
-        ID = in.readInt();
+        phoneNumber = in.readString();
+        notes = in.readString();
+        name = in.readString();
+        lastName = in.readString();
+        callTime = in.readString();
+        callDate = in.readString();
+        email = in.readString();
+        id = in.readInt();
         catchCall = in.readInt();
         reminder =in.readString();
         isSynced = in.readInt();
@@ -241,15 +240,14 @@ public class ClassNote implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeString(PhoneNumber);
-        dest.writeString(Notes);
-        dest.writeString(Name);
-        dest.writeString(LastName);
-        dest.writeString(CallTime);
-        dest.writeString(CallDate);
-        dest.writeString(Email);
-        dest.writeString(City);
-        dest.writeInt(ID);
+        dest.writeString(phoneNumber);
+        dest.writeString(notes);
+        dest.writeString(name);
+        dest.writeString(lastName);
+        dest.writeString(callTime);
+        dest.writeString(callDate);
+        dest.writeString(email);
+        dest.writeInt(id);
         dest.writeInt(catchCall);
         dest.writeString(reminder);
         dest.writeInt(isSynced);
@@ -263,5 +261,116 @@ public class ClassNote implements Parcelable {
 
     public void setCategory(String category) {
         this.category = category;
+    }
+
+    public Date getDateObject() {
+        return dateObject;
+    }
+
+    public void setDateObject(Date dateObject) {
+        this.dateObject = dateObject;
+    }
+
+    public String getTimeTitle() {
+
+        int seconds = 0;
+        int minutes = 0;
+        try {
+            seconds = Integer.parseInt(getCallTime());
+            while (seconds - 60 >= 0) {
+                minutes++;
+                seconds -= 60;
+            }
+        } catch (NumberFormatException e) {
+            //Will Throw exception!
+            //do something! anything to handle the exception.
+        }
+
+        final String OLD_FORMAT = "MMM dd HH:mm";
+        final String NEW_FORMAT = "MMM dd HH:mm";
+        Date d = null;
+
+        String minAndSecTitle;
+        String onlySecTitle;
+        String plainTitle;
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat(OLD_FORMAT, Locale.ENGLISH);
+            d = sdf.parse(getCallDate());
+            sdf.applyPattern(NEW_FORMAT);
+            String newDateString = sdf.format(d);
+            minAndSecTitle = newDateString + " , " + minutes + " min " + seconds + " s";
+            onlySecTitle = newDateString + " , " + seconds + " s";
+            plainTitle = newDateString;
+        } catch (ParseException e) {
+            e.printStackTrace();
+            minAndSecTitle = getCallDate()
+                    + " , " + minutes + " min " + seconds + " s";
+            onlySecTitle = getCallDate()
+                    + " , " + seconds + " s";
+            plainTitle = getCallDate();
+        }
+        if (minutes != 0) {
+            return minAndSecTitle;
+        } else {
+            if (seconds == 0) {
+                return plainTitle;
+            } else {
+                return onlySecTitle;
+            }
+        }
+    }
+
+    public void setTimeTitle(String timeTitle) {
+        this.timeTitle = timeTitle;
+    }
+    private void setCategoryColor(Context context,Drawable background,int color){
+        try {
+            if (background instanceof ShapeDrawable) {
+                ((ShapeDrawable) background).getPaint().setColor(ContextCompat.getColor(context, color));
+            } else if (background instanceof GradientDrawable) {
+                ((GradientDrawable) background).setColor(ContextCompat.getColor(context, color));
+            } else if (background instanceof ColorDrawable) {
+                ((ColorDrawable) background).setColor(ContextCompat.getColor(context, color));
+            }
+        }catch (Exception e) {
+            String hexColor = String.format("#%06X", (0xFFFFFF & color));
+            if (background instanceof ShapeDrawable) {
+                ((ShapeDrawable) background).getPaint().setColor(Color.parseColor(String.valueOf(hexColor)));
+            } else if (background instanceof GradientDrawable) {
+                ((GradientDrawable) background).setColor(Color.parseColor(String.valueOf(hexColor)));
+            } else if (background instanceof ColorDrawable) {
+                ((ColorDrawable) background).setColor(Color.parseColor(String.valueOf(hexColor)));
+            }
+        }
+    }
+
+    private String makeCategoryTitle(Context context,Drawable background) {
+        String cat = category;//categories stored in db with space in the end
+        if (cat.equals("Personal ")) {
+            setCategoryColor(context, background, R.color.personal);
+            return "PERSONAL";
+        } else if (cat.equals("Important ")) {
+            setCategoryColor(context, background, R.color.important);
+            return "IMPORTANT";
+        } else {
+            Database db = new Database(context);
+            ArrayList<CategoriesAndColors> cats = db.getCatsAndColors();
+            for (CategoriesAndColors cat_color : cats) {
+                if (cat_color.getCategory().equals(cat.substring(0, cat.length() - 1))) {
+
+                }
+            }
+            setCategoryColor(context, background, Color.BLUE);
+            return cat.substring(0, cat.length() - 1);
+
+        }
+    }
+
+    public String getCategoryTitle(Context context,Drawable background) {
+        return makeCategoryTitle(context,background);
+    }
+
+    public void setCategoryTitle(String categoryTitle) {
+        this.categoryTitle = categoryTitle;
     }
 }

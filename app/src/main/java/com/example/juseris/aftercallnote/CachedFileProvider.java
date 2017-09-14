@@ -32,6 +32,7 @@ public class CachedFileProvider extends ContentProvider {
     // UriMatcher used to match against incoming requests
     private UriMatcher uriMatcher;
     private static boolean hasCSV = false;
+
     @Override
     public boolean onCreate() {
         uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
@@ -110,9 +111,9 @@ public class CachedFileProvider extends ContentProvider {
         return null;
     }
 
-    public static void createCachedFile(Context context,String fileName1, String fileName2,
-                                        String content,String content2) throws IOException {
-        if(!fileName2.equals("")) {
+    public static void createCachedFile(Context context, String fileName1, String fileName2,
+                                        String content, String content2) throws IOException {
+        if (!fileName2.equals("")) {
             File cacheFile = new File(context.getCacheDir() + File.separator
                     + fileName1);
             cacheFile.createNewFile();
@@ -138,7 +139,7 @@ public class CachedFileProvider extends ContentProvider {
 
             //pw.flush();
             pw2.close();
-        }else{
+        } else {
             File cacheFile = new File(context.getCacheDir() + File.separator
                     + fileName1);
             cacheFile.createNewFile();
@@ -155,12 +156,12 @@ public class CachedFileProvider extends ContentProvider {
         hasCSV = true;
     }
 
-    public Intent getMultipleAttachmentIntent(String name,String name2){
+    public Intent getMultipleAttachmentIntent(String name, String name2) {
         //File filelocation = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), name);
         //Uri path = Uri.fromFile(filelocation);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         String email = "";
-        if(user != null) {
+        if (user != null) {
             email = user.getEmail();
         }
         String[] TO = {email};
@@ -175,13 +176,12 @@ public class CachedFileProvider extends ContentProvider {
         emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Notes And incoming calls");
         ArrayList<Uri> uris = new ArrayList<Uri>();
         String[] filePaths = new String[]{"content://" + CachedFileProvider.AUTHORITY + "/" + name
-                                         ,"content://" + CachedFileProvider.AUTHORITY + "/" + name2};
-        for (String file : filePaths)
-        {
+                , "content://" + CachedFileProvider.AUTHORITY + "/" + name2};
+        for (String file : filePaths) {
             uris.add(Uri.parse(file));
         }
 
-        if(hasCSV) {
+        if (hasCSV) {
             emailIntent.putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris);
         }
         return emailIntent;
@@ -189,12 +189,12 @@ public class CachedFileProvider extends ContentProvider {
     }
 
 
-    public Intent getSendEmailIntent(String allLines,String name) {
+    public Intent getSendEmailIntent(String allLines, String name) {
         File filelocation = new File(Environment.getExternalStorageDirectory().getAbsolutePath(), name);
         Uri path = Uri.fromFile(filelocation);
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         String email = "";
-        if(user != null) {
+        if (user != null) {
             email = user.getEmail();
         }
         String[] TO = {email};
@@ -207,13 +207,13 @@ public class CachedFileProvider extends ContentProvider {
 
         emailIntent.putExtra(Intent.EXTRA_EMAIL, TO);
         //emailIntent.putExtra(Intent.EXTRA_CC, CC);
-        if(name.equals("call_data.csv")) {
+        if (name.equals("call_data.csv")) {
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "Notes");
-        }else{
+        } else {
             emailIntent.putExtra(Intent.EXTRA_SUBJECT, "All incoming calls");
         }
         emailIntent.putExtra(Intent.EXTRA_TEXT, allLines);
-        if(hasCSV) {
+        if (hasCSV) {
             emailIntent.putExtra(
                     Intent.EXTRA_STREAM,
                     Uri.parse("content://" + CachedFileProvider.AUTHORITY + "/"

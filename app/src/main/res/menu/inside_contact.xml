@@ -4,10 +4,4 @@
     <item android:id="@+id/showStats"
         android:title="@string/showStats"
         app:showAsAction="never"  />
-    <item android:id="@+id/text"
-        android:title="@string/Text"
-        app:showAsAction="never"  />
-    <item android:id="@+id/call"
-        android:title="@string/CALL"
-        app:showAsAction="never"  />
 </menu>

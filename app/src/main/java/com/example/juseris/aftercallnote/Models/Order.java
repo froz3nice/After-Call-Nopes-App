@@ -4,30 +4,30 @@ package com.example.juseris.aftercallnote.Models;
 /**
  * Created by juseris on 6/10/2017.
  */
-public class Order {
-    String id;
-    String name;
-    String surname;
-    String phone_nr;
-    String order_nr;
-    String order_state;
+public class Order implements IGenericItem {
+    private String date;
+    private String name;
+    private String surname;
+    private String phone_nr;
+    private String order_nr;
+    private String order_state;
     public Order(){}
 
-    public Order(String id, String name, String surname, String phone_nr, String order_nr, String order_state) {
-        this.id = id;
+    public Order(String name, String surname, String phone_nr, String order_nr, String order_state,String date) {
         this.name = name;
         this.surname = surname;
         this.phone_nr = phone_nr;
         this.order_nr = order_nr;
         this.order_state = order_state;
+        this.date = date;
     }
 
-    public String getId() {
-        return id;
+    public String getDate() {
+        return date;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public void setDate(String date) {
+        this.date = date;
     }
 
     public String getName() {

@@ -4,6 +4,6 @@
     <item
         android:id="@+id/action_addNote"
         android:icon="@drawable/ic_plus_sign"
-        app:showAsAction="always"
-        android:title="@string/str_button_addnote"/>
+        android:title="@string/str_button_addnote"
+        app:showAsAction="always" />
 </menu>

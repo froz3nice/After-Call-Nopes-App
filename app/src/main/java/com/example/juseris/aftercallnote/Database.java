@@ -7,51 +7,63 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import com.example.juseris.aftercallnote.Models.CallStatisticsEntity;
+import com.example.juseris.aftercallnote.Models.CategoriesAndColors;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Models.ContactEntity;
 import com.example.juseris.aftercallnote.Models.ContactsEntity;
+import com.example.juseris.aftercallnote.Models.IGenericItem;
+import com.example.juseris.aftercallnote.Models.Order;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.Locale;
 
 @SuppressWarnings("serial") //With this annotation we are going to hide compiler warnings
 public class Database extends SQLiteOpenHelper implements Serializable {
     private Context context;
 
-    private SQLiteDatabase NoteDatabase;
-
-    private static final String NoteDatabaseName = "NoteDatabase.db";
-    private static final int DataBaseVersion = 3;
+    private SQLiteDatabase noteDatabase;
+    private static final String NoteDatabaseName = "noteDatabase.db";
+    private static final int DataBaseVersion = 2;
 
     private final String TableName = "NotesTable3";
     private final String ID = "ID";
     private final String number = "number";
     private final String note = "note";
-    private final String Reminder = "Reminder";
+    private final String reminder = "reminder";
     private final String callDate = "callDate";
     private final String callTime = "callTime";
     private final String name = "name";
     private final String catchCall = "catchCall";
-    private final String IncomingCallCount = "incomingCallCount";
-    private final String OutgoingCallCount = "outgoingCallCount";
-    private final String TypedNoteCount = "typedNoteCount";
-    private final String RemindersAddedCount = "remindersAddedCount";
-    private final String IncomingTimeTotal = "incomingTimeTotal";
-    private final String OutgoingTimeTotal = "outgoingTimeTotal";
+    private final String incomingCallCount = "incomingCallCount";
+    private final String outgoingCallCount = "outgoingCallCount";
+    private final String typedNoteCount = "typedNoteCount";
+    private final String remindersAddedCount = "remindersAddedCount";
+    private final String incomingTimeTotal = "incomingTimeTotal";
+    private final String outgoingTimeTotal = "outgoingTimeTotal";
     private final String ContactsTableName = "ContactsTable";
-    private final String ContactNumber = "ContactNumber";
-    private final String ContactName = "ContactName";
+    private final String contactNumber = "contactNumber";
+    private final String contactName = "contactName";
     private final String callStatisticsTable = "callStatisticsTable";
-    private ArrayList<ClassNote> dataList;
+    private ArrayList<IGenericItem> dataList;
     private final String ifSynced = "if_synced";
     private final String SyncedTable = "Synced_Table";
     private final String FriendEmail = "FriendEmail";
     private final String category = "Category";
     private final String incomingCallTable = "incomingTable";
     private final String outgoingCallTable = "outogingTable";
+    private String categories = "categoriess";
+    private String color = "colorr";
+    private String PrestaShop = "prestaShop1";
+    private String surname = "surname";
+    private String orderState = "order_state";
+    private String orderNumber = "order_number";
+    private String phoneNumber = "phone_number";
+    private String date = "date";
+    private String PrestaShopNewItems = "newPrestashopItems";
 
     public Database(Context context) {
         super(context, NoteDatabaseName, null, DataBaseVersion);
@@ -63,12 +75,12 @@ public class Database extends SQLiteOpenHelper implements Serializable {
 
     public void deleteSyncedNotesTable() {
         openDatabase();
-        NoteDatabase.delete(SyncedTable, null, null);
+        noteDatabase.delete(SyncedTable, null, null);
         closeDatabase();
     }
 
     private void CreateDatabase() {
-        NoteDatabase = this.context.openOrCreateDatabase(NoteDatabaseName, Context.MODE_PRIVATE, null);
+        noteDatabase = this.context.openOrCreateDatabase(NoteDatabaseName, Context.MODE_PRIVATE, null);
 
         String SQL = "CREATE TABLE IF NOT EXISTS " + TableName +
                 " ( " +
@@ -79,26 +91,25 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 callTime + " TEXT, " +
                 name + " TEXT, " +
                 catchCall + " INTEGER, " +
-                Reminder + " TEXT, " +
-                category+" TEXT "+
+                reminder + " TEXT, " +
+                category + " TEXT " +
                 " ) ";
-
         String SQL2 = "CREATE TABLE IF NOT EXISTS " + ContactsTableName +
                 " ( " +
                 ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                ContactNumber + " TEXT, " +
-                ContactName + " TEXT " +
+                contactNumber + " TEXT, " +
+                contactName + " TEXT " +
                 " ) ";
         String SQL3 = "CREATE TABLE IF NOT EXISTS " + callStatisticsTable +
                 " ( " +
                 ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 number + " TEXT, " +
-                IncomingCallCount + " INTEGER, " +
-                OutgoingCallCount + " INTEGER, " +
-                TypedNoteCount + " INTEGER, " +
-                RemindersAddedCount + " INTEGER, " +
-                IncomingTimeTotal + " INTEGER," +
-                OutgoingTimeTotal + " INTEGER" +
+                incomingCallCount + " INTEGER, " +
+                outgoingCallCount + " INTEGER, " +
+                typedNoteCount + " INTEGER, " +
+                remindersAddedCount + " INTEGER, " +
+                incomingTimeTotal + " INTEGER," +
+                outgoingTimeTotal + " INTEGER" +
                 " ) ";
 
         String SQL4 = "CREATE TABLE IF NOT EXISTS " + SyncedTable +
@@ -108,8 +119,9 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 note + " TEXT, " +
                 callDate + " TEXT, " +
                 name + " TEXT, " +
-                FriendEmail +" TEXT,"+
-                category+" TEXT "+
+                FriendEmail + " TEXT," +
+                reminder + " TEXT, " +
+                category + " TEXT " +
                 " ) ";
         String SQL5 = "CREATE TABLE IF NOT EXISTS " + incomingCallTable +
                 " ( " +
@@ -127,22 +139,52 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 callDate + " TEXT, " +
                 name + " TEXT " +
                 " ) ";
-        NoteDatabase.execSQL(SQL);
-        NoteDatabase.execSQL(SQL2);
-        NoteDatabase.execSQL(SQL3);
-        NoteDatabase.execSQL(SQL4);
-        NoteDatabase.execSQL(SQL5);
-        NoteDatabase.execSQL(SQL6);
+        String SQL7 = "CREATE TABLE IF NOT EXISTS " + categories +
+                " ( " +
+                ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                category + " TEXT, " +
+                color + " TEXT " +
+                " ) ";
+        String SQL8 = "CREATE TABLE IF NOT EXISTS " + PrestaShop +
+                " ( " +
+                ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                name + " TEXT, " +
+                surname + " TEXT, " +
+                orderState + " TEXT, " +
+                orderNumber + " INTEGER, " +
+                phoneNumber + " TEXT, " +
+                date + " TEXT " +
+                " ) ";
+        String SQL9 = "CREATE TABLE IF NOT EXISTS " + PrestaShopNewItems +
+                " ( " +
+                ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                name + " TEXT, " +
+                surname + " TEXT, " +
+                orderState + " TEXT, " +
+                orderNumber + " INTEGER, " +
+                phoneNumber + " TEXT, " +
+                date + " TEXT " +
+                " ) ";
+
+        noteDatabase.execSQL(SQL);
+        noteDatabase.execSQL(SQL2);
+        noteDatabase.execSQL(SQL3);
+        noteDatabase.execSQL(SQL4);
+        noteDatabase.execSQL(SQL5);
+        noteDatabase.execSQL(SQL6);
+        noteDatabase.execSQL(SQL7);
+        noteDatabase.execSQL(SQL8);
+        noteDatabase.execSQL(SQL9);
     }
 
     public void openDatabase() {
-        if (!NoteDatabase.isOpen())
-            NoteDatabase = this.context.openOrCreateDatabase(NoteDatabaseName, Context.MODE_PRIVATE, null);
+        if (!noteDatabase.isOpen())
+            noteDatabase = this.context.openOrCreateDatabase(NoteDatabaseName, Context.MODE_PRIVATE, null);
     }
 
     public void closeDatabase() {
-        if (NoteDatabase.isOpen())
-            NoteDatabase.close();
+        if (noteDatabase.isOpen())
+            noteDatabase.close();
     }
 
     public boolean getCatchCall(String nr) {
@@ -150,7 +192,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
 
         dataList = new ArrayList<>();
         String SQL = "SELECT * FROM " + TableName + " WHERE " + number + "='" + nr + "'";
-        Cursor cursor = NoteDatabase.rawQuery(SQL, null);
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
         boolean isEmpty = true;
         if (cursor.moveToFirst()) {
             do {
@@ -162,18 +204,19 @@ public class Database extends SQLiteOpenHelper implements Serializable {
             } while (cursor.moveToNext());
         }
         cursor.close();
-        //closeDatabase();
+
+        closeDatabase();
         return isEmpty;
     }
 
-    public ArrayList<ClassNote> getData() {
+    public ArrayList<IGenericItem> getData() {
         openDatabase();
 
         dataList = new ArrayList<>();
 
         String SQL = "SELECT * FROM " + TableName;
 
-        Cursor cursor = NoteDatabase.rawQuery(SQL, null);
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
 
         if (cursor.moveToFirst()) {
             do {
@@ -209,12 +252,12 @@ public class Database extends SQLiteOpenHelper implements Serializable {
         return dataList;
     }
 
-    public ArrayList<ClassNote> getSyncedNotesByNumber(String nmb){
+    public ArrayList<IGenericItem> getSyncedNotesByNumber(String nmb) {
         openDatabase();
         dataList = new ArrayList<>();
 
         String SQL = "SELECT * FROM " + SyncedTable + " WHERE " + number + "='" + nmb + "'";
-        Cursor cursor = NoteDatabase.rawQuery(SQL, null);
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
 
         if (cursor.moveToFirst()) {
             do {
@@ -224,8 +267,9 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 String callDate = cursor.getString(3);
                 String name = cursor.getString(4);
                 String friendEmail = cursor.getString(5);
-                String category = cursor.getString(6);
-                if(!"Personal ".equals(category)) {
+                String reminder = cursor.getString(6);
+                String category = cursor.getString(7);
+                if (!"Personal ".equals(category)) {
                     ClassNote classNote = new ClassNote(id);
                     classNote.setPhoneNumber(nr);
                     classNote.setNotes(note);
@@ -234,7 +278,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     classNote.setSynced(1);
                     classNote.setFriendEmail(friendEmail);
                     classNote.setCategory(category);
-                    classNote.setReminder("");
+                    classNote.setReminder(reminder);
                     dataList.add(classNote);
                 }
             } while (cursor.moveToNext());
@@ -245,11 +289,11 @@ public class Database extends SQLiteOpenHelper implements Serializable {
         return dataList;
     }
 
-    public ArrayList<ClassNote> getDataByNumber(String _number) {
+    public ArrayList<IGenericItem> getDataByNumber(String _number) {
         openDatabase();
         dataList = new ArrayList<>();
         String SQL = "SELECT * FROM " + TableName + " WHERE " + number + "='" + _number + "'";
-        Cursor cursor = NoteDatabase.rawQuery(SQL, null);
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
 
         if (cursor.moveToFirst()) {
             do {
@@ -282,48 +326,59 @@ public class Database extends SQLiteOpenHelper implements Serializable {
         return dataList;
     }
 
-    public void updateCatchCall(String number, Integer catchCallState) {
+    public void updateNote(Integer id, String note, String reminder, String category) {
         openDatabase();
-        String SQL = "UPDATE " + TableName +
-                " SET " + catchCall + "=" + catchCallState + " WHERE " + this.number + "='" + number + "'";
-        NoteDatabase.execSQL(SQL);
-        closeDatabase();
-    }
-
-    public void Update_Note(Integer id, String note,String reminder,String category) {
-        openDatabase();
-        if(!category.equals("")){
-            category+=" ";
+        if (!category.equals("")) {
+            category += " ";
         }
         String SQL = "UPDATE " + TableName +
                 " SET " + this.note + "='" + note + "' WHERE " + ID + "='" + id + "'";
         String sql2 = "UPDATE " + TableName +
-                " SET " + this.Reminder + "='" + reminder + "' WHERE " + ID + "='" + id + "'";
+                " SET " + this.reminder + "='" + reminder + "' WHERE " + ID + "='" + id + "'";
         String sql3 = "UPDATE " + TableName +
                 " SET " + this.category + "='" + category + "' WHERE " + ID + "='" + id + "'";
-        NoteDatabase.execSQL(SQL);
-        NoteDatabase.execSQL(sql2);
-        NoteDatabase.execSQL(sql3);
+        noteDatabase.execSQL(SQL);
+        noteDatabase.execSQL(sql2);
+        noteDatabase.execSQL(sql3);
         closeDatabase();
     }
 
-    public void deleteFromSyncedTable(Integer id){
+
+    public void updateSyncedNote(Integer id, String note, String reminder, String category) {
+        openDatabase();
+        if (!category.equals("")) {
+            category += " ";
+        }
+
+        String SQL = "UPDATE " + SyncedTable +
+                " SET " + this.note + "='" + note + "' WHERE " + ID + "='" + id + "'";
+        String sql2 = "UPDATE " + SyncedTable +
+                " SET " + this.reminder + "='" + reminder + "' WHERE " + ID + "='" + id + "'";
+        String sql3 = "UPDATE " + SyncedTable +
+                " SET " + this.category + "='" + category + "' WHERE " + ID + "='" + id + "'";
+        noteDatabase.execSQL(SQL);
+        noteDatabase.execSQL(sql2);
+        noteDatabase.execSQL(sql3);
+        closeDatabase();
+    }
+
+    public void deleteFromSyncedTable(Integer id) {
         openDatabase();
         String SQL = "DELETE FROM " + SyncedTable + " WHERE " + ID + "='" + id + "'";
-        NoteDatabase.execSQL(SQL);
+        noteDatabase.execSQL(SQL);
         closeDatabase();
     }
 
-    public void Insert_Note(String number, String note, String callTime, String name,
-                            Integer catchCallState, String reminder,String category) {
+    public void insertNote(String number, String note, String callTime, String name,
+                           Integer catchCallState, String reminder, String category) {
         openDatabase();
 
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat df = new SimpleDateFormat("MMMM dd HH:mm", Locale.US);
         String date = String.format("%s", df.format(calendar.getTime()));
         Integer sync = 0;
-        if(!category.equals("")){
-            category+=" ";
+        if (!category.equals("")) {
+            category += " ";
         }
         String SQL = "INSERT INTO " + TableName + " ( " +
                 this.number + " , " +
@@ -332,8 +387,8 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 this.callTime + " , " +
                 this.name + " , " +
                 this.catchCall + " , " +
-                this.Reminder + " , "+
-                this.category+
+                this.reminder + " , " +
+                this.category +
                 " ) VALUES ( '" +
                 number + "' , '" +
                 note + "' , '" +
@@ -341,11 +396,11 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 callTime + "' , '" +
                 name + "' , '" +
                 catchCallState + "' , '" +
-                reminder + "' , '"+
-                category+
+                reminder + "' , '" +
+                category +
                 "' ) ";
 
-        NoteDatabase.execSQL(SQL);
+        noteDatabase.execSQL(SQL);
 
         closeDatabase();
     }
@@ -354,7 +409,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
         openDatabase();
 
         String SQL = "SELECT * FROM " + callStatisticsTable;
-        Cursor cursor = NoteDatabase.rawQuery(SQL, null);
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
         CallStatisticsEntity csl = new CallStatisticsEntity();
         int incoming = 0;
         int outgoing = 0;
@@ -402,7 +457,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
         csl.setRemindersAddedCount(0);
         csl.setOutgoingTimeTotal(0);
         csl.setIncomingTimeTotal(0);
-        Cursor cursor = NoteDatabase.rawQuery(SQL, null);
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
         if (cursor.moveToFirst()) {
             do {
                 Integer id = cursor.getInt(0);
@@ -433,48 +488,48 @@ public class Database extends SQLiteOpenHelper implements Serializable {
             , Integer incTime, Integer outTime) {
         openDatabase();
         String Query = "SELECT * FROM " + callStatisticsTable + " WHERE " + this.number + " = '" + number + "' ";
-        Cursor cursor = NoteDatabase.rawQuery(Query, null);
+        Cursor cursor = noteDatabase.rawQuery(Query, null);
         if (cursor.moveToFirst()) {
             if (incomingCallCount != 0) {
                 String SQL = "UPDATE " + callStatisticsTable +
-                        " SET " + this.IncomingCallCount + " = " + this.IncomingCallCount + "+1" + " WHERE " + this.number + "='" + number + "'";
-                NoteDatabase.execSQL(SQL);
+                        " SET " + this.incomingCallCount + " = " + this.incomingCallCount + "+1" + " WHERE " + this.number + "='" + number + "'";
+                noteDatabase.execSQL(SQL);
             }
             if (outgoingCallCount != 0) {
                 String SQL = "UPDATE " + callStatisticsTable +
-                        " SET " + OutgoingCallCount + " = " + OutgoingCallCount + "+1 WHERE " + this.number + "='" + number + "'";
-                NoteDatabase.execSQL(SQL);
+                        " SET " + this.outgoingCallCount + " = " + this.outgoingCallCount + "+1 WHERE " + this.number + "='" + number + "'";
+                noteDatabase.execSQL(SQL);
             }
             if (typedNoteCount != 0) {
                 String SQL = "UPDATE " + callStatisticsTable +
-                        " SET " + TypedNoteCount + " = " + TypedNoteCount + "+1" + " WHERE " + this.number + "='" + number + "'";
-                NoteDatabase.execSQL(SQL);
+                        " SET " + this.typedNoteCount + " = " + this.typedNoteCount + "+1" + " WHERE " + this.number + "='" + number + "'";
+                noteDatabase.execSQL(SQL);
             }
             if (remindersAddedCount != 0) {
                 String SQL = "UPDATE " + callStatisticsTable +
-                        " SET " + RemindersAddedCount + " = " + RemindersAddedCount + "+1" + " WHERE " + this.number + "='" + number + "'";
-                NoteDatabase.execSQL(SQL);
+                        " SET " + this.remindersAddedCount + " = " + this.remindersAddedCount + "+1" + " WHERE " + this.number + "='" + number + "'";
+                noteDatabase.execSQL(SQL);
             }
             if (incTime != 0) {
                 String SQL = "UPDATE " + callStatisticsTable +
-                        " SET " + IncomingTimeTotal + " = " + IncomingTimeTotal + "+" + incTime + " WHERE " + this.number + "='" + number + "'";
-                NoteDatabase.execSQL(SQL);
+                        " SET " + incomingTimeTotal + " = " + incomingTimeTotal + "+" + incTime + " WHERE " + this.number + "='" + number + "'";
+                noteDatabase.execSQL(SQL);
             }
             if (outTime != 0) {
                 String SQL = "UPDATE " + callStatisticsTable +
-                        " SET " + OutgoingTimeTotal + " = " + OutgoingTimeTotal + "+" + outTime + " WHERE " + this.number + "='" + number + "'";
-                NoteDatabase.execSQL(SQL);
+                        " SET " + outgoingTimeTotal + " = " + outgoingTimeTotal + "+" + outTime + " WHERE " + this.number + "='" + number + "'";
+                noteDatabase.execSQL(SQL);
             }
             // return false;
         } else {
             String SQL = "INSERT INTO " + callStatisticsTable + " ( " +
                     this.number + " , " +
-                    this.IncomingCallCount + " , " +
-                    this.OutgoingCallCount + " , " +
-                    this.TypedNoteCount + " , " +
-                    this.RemindersAddedCount + " , " +
-                    this.IncomingTimeTotal + " , " +
-                    this.OutgoingTimeTotal +
+                    this.incomingCallCount + " , " +
+                    this.outgoingCallCount + " , " +
+                    this.typedNoteCount + " , " +
+                    this.remindersAddedCount + " , " +
+                    this.incomingTimeTotal + " , " +
+                    this.outgoingTimeTotal +
                     " ) VALUES ( '" +
                     number + "' , " +
                     incomingCallCount + " , " +
@@ -485,7 +540,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     outTime +
                     " ) ";
 
-            NoteDatabase.execSQL(SQL);
+            noteDatabase.execSQL(SQL);
         }
         cursor.close();
         closeDatabase();
@@ -496,18 +551,19 @@ public class Database extends SQLiteOpenHelper implements Serializable {
     public void Delete_Note(Integer id) {
         openDatabase();
         String SQL = "DELETE FROM " + TableName + " WHERE " + ID + "='" + id + "'";
-        NoteDatabase.execSQL(SQL);
+        noteDatabase.execSQL(SQL);
         closeDatabase();
     }
+
     public void deleteInCall(ContactEntity c) {
         openDatabase();
         String SQL = "DELETE FROM "
                 + incomingCallTable + " WHERE "
-                + number  + "='" + c.getNumber() + "' AND "
-                + callTime + "='" +c.getCallDuration()+"' AND "
-                + callDate + "='" +c.getCallTime()+"' AND "
-                + name     + "='" +c.getName()+"'" ;
-        NoteDatabase.execSQL(SQL);
+                + number + "='" + c.getNumber() + "' AND "
+                + callTime + "='" + c.getCallDuration() + "' AND "
+                + callDate + "='" + c.getCallTime() + "' AND "
+                + name + "='" + c.getName() + "'";
+        noteDatabase.execSQL(SQL);
         closeDatabase();
     }
 
@@ -515,11 +571,11 @@ public class Database extends SQLiteOpenHelper implements Serializable {
         openDatabase();
         String SQL = "DELETE FROM "
                 + outgoingCallTable + " WHERE "
-                + number  + "='" + c.getNumber() + "' AND "
-                + callTime + "='" +c.getCallDuration()+"' AND "
-                + callDate + "='" +c.getCallTime()+"' AND "
-                + name     + "='" +c.getName()+"'" ;
-        NoteDatabase.execSQL(SQL);
+                + number + "='" + c.getNumber() + "' AND "
+                + callTime + "='" + c.getCallDuration() + "' AND "
+                + callDate + "='" + c.getCallTime() + "' AND "
+                + name + "='" + c.getName() + "'";
+        noteDatabase.execSQL(SQL);
         closeDatabase();
     }
 
@@ -538,7 +594,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 call.getName() +
                 "' ) ";
 
-        NoteDatabase.execSQL(SQL);
+        noteDatabase.execSQL(SQL);
         closeDatabase();
     }
 
@@ -556,15 +612,15 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 call.getName() +
                 "' ) ";
 
-        NoteDatabase.execSQL(SQL);
+        noteDatabase.execSQL(SQL);
         closeDatabase();
     }
 
-    public ArrayList<ContactEntity> getIncomingCalls(){
+    public ArrayList<ContactEntity> getIncomingCalls() {
         openDatabase();
         ArrayList<ContactEntity> list = new ArrayList<>();
-        String SQL = "SELECT * FROM " + incomingCallTable ;
-        Cursor cursor = NoteDatabase.rawQuery(SQL, null);
+        String SQL = "SELECT * FROM " + incomingCallTable;
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
         if (cursor.moveToLast()) {
             do {
                 ContactEntity csl = new ContactEntity();
@@ -586,11 +642,11 @@ public class Database extends SQLiteOpenHelper implements Serializable {
         return list;
     }
 
-    public ArrayList<ContactEntity> getOutgoingCalls(){
+    public ArrayList<ContactEntity> getOutgoingCalls() {
         openDatabase();
         ArrayList<ContactEntity> list = new ArrayList<>();
-        String SQL = "SELECT * FROM " + outgoingCallTable ;
-        Cursor cursor = NoteDatabase.rawQuery(SQL, null);
+        String SQL = "SELECT * FROM " + outgoingCallTable;
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
         if (cursor.moveToLast()) {
             do {
                 ContactEntity csl = new ContactEntity();
@@ -611,25 +667,28 @@ public class Database extends SQLiteOpenHelper implements Serializable {
         closeDatabase();
         return list;
     }
-    public void deleteOutgoingCalls(){
+
+    public void deleteOutgoingCalls() {
         openDatabase();
-        NoteDatabase.execSQL("delete from "+ outgoingCallTable);
+        noteDatabase.execSQL("delete from " + outgoingCallTable);
         closeDatabase();
     }
-    public void deleteIncomingCalls(){
+
+    public void deleteIncomingCalls() {
         openDatabase();
-        NoteDatabase.execSQL("delete from "+ incomingCallTable);
+        noteDatabase.execSQL("delete from " + incomingCallTable);
         closeDatabase();
     }
-    public void insertOutgoingCalls(ArrayList<ContactEntity> calls){
+
+    public void insertOutgoingCalls(ArrayList<ContactEntity> calls) {
         openDatabase();
-        for(ContactEntity e : calls) {
+        for (ContactEntity e : calls) {
             String duration = e.getCallDuration();
             String time = e.getCallTime();
-            if(!e.getCallDuration().contains("s")){
+            if (!e.getCallDuration().contains("s")) {
                 duration = getCallDuration(duration);
             }
-            if(!e.getCallTime().contains(":")){
+            if (!e.getCallTime().contains(":")) {
                 time = getCallTime(time);
             }
             String SQL = "INSERT INTO " + outgoingCallTable + " ( " +
@@ -644,20 +703,20 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     e.getName() +
                     "' ) ";
 
-            NoteDatabase.execSQL(SQL);
+            noteDatabase.execSQL(SQL);
         }
         closeDatabase();
     }
 
-    public void insertIncomingCalls(ArrayList<ContactEntity> calls){
+    public void insertIncomingCalls(ArrayList<ContactEntity> calls) {
         openDatabase();
-        for(ContactEntity e : calls) {
+        for (ContactEntity e : calls) {
             String duration = e.getCallDuration();
             String time = e.getCallTime();
-            if(!e.getCallDuration().contains("s")){
+            if (!e.getCallDuration().contains("s")) {
                 duration = getCallDuration(duration);
             }
-            if(!e.getCallTime().contains(":")){
+            if (!e.getCallTime().contains(":")) {
                 time = getCallTime(time);
             }
             String SQL = "INSERT INTO " + incomingCallTable + " ( " +
@@ -672,10 +731,44 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     e.getName() +
                     "' ) ";
 
-            NoteDatabase.execSQL(SQL);
+            noteDatabase.execSQL(SQL);
         }
         closeDatabase();
     }
+
+    public void insertCategoryAndColor(CategoriesAndColors cat_color) {
+        openDatabase();
+
+        String SQL = "INSERT INTO " + categories + " ( " +
+                this.category + " , " +
+                this.color +
+                " ) VALUES ( '" +
+                cat_color.getCategory() + "' , '" +
+                cat_color.getColor() +
+                "' ) ";
+        noteDatabase.execSQL(SQL);
+    }
+
+
+    public ArrayList<CategoriesAndColors> getCatsAndColors() {
+        openDatabase();
+        String SQL = "SELECT * FROM " + categories;
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
+        ArrayList<CategoriesAndColors> cats = new ArrayList<>();
+        if (cursor.moveToLast()) {
+            do {
+                Integer id = cursor.getInt(0);
+                String category = cursor.getString(1);
+                String color = cursor.getString(2);
+                CategoriesAndColors cat = new CategoriesAndColors(category, color);
+                cats.add(cat);
+            } while (cursor.moveToPrevious());
+        }
+        cursor.close();
+        Collections.reverse(cats);
+        return cats;
+    }
+
     private String getCallTime(String callTime) {
         String tm = "hey";
         try {
@@ -683,7 +776,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(Long.parseLong(callTime));
             tm = formatter.format(calendar.getTime());
-        }catch (Exception e) {
+        } catch (Exception e) {
             tm = "";
         }
         return tm;
@@ -702,12 +795,13 @@ public class Database extends SQLiteOpenHelper implements Serializable {
             //Will Throw exception!
             //do something! anything to handle the exception.
         }
-        String time = String.valueOf(seconds)+" s";
-        if(minutes != 0){
-            time = minutes+" min "+seconds+" s";
+        String time = String.valueOf(seconds) + " s";
+        if (minutes != 0) {
+            time = minutes + " min " + seconds + " s";
         }
         return time;
     }
+
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS " + TableName + "(" +
@@ -718,27 +812,27 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 callTime + " TEXT, " +
                 name + " TEXT, " +
                 catchCall + "INTEGER, " +
-                Reminder + " TEXT,"+
-                category+" TEXT"+
+                reminder + " TEXT," +
+                category + " TEXT" +
                 ")");
 
 
         db.execSQL("CREATE TABLE IF NOT EXISTS " + ContactsTableName +
                 " ( " +
                 ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                ContactNumber + " TEXT, " +
-                ContactName + " TEXT " +
+                contactNumber + " TEXT, " +
+                contactName + " TEXT " +
                 " ) ");
         db.execSQL("CREATE TABLE IF NOT EXISTS " + callStatisticsTable +
                 " ( " +
                 ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 number + " TEXT, " +
-                IncomingCallCount + " INTEGER, " +
-                OutgoingCallCount + " INTEGER, " +
-                TypedNoteCount + " INTEGER, " +
-                RemindersAddedCount + " INTEGER, " +
-                IncomingTimeTotal + " INTEGER," +
-                OutgoingTimeTotal + " INTEGER" +
+                incomingCallCount + " INTEGER, " +
+                outgoingCallCount + " INTEGER, " +
+                typedNoteCount + " INTEGER, " +
+                remindersAddedCount + " INTEGER, " +
+                incomingTimeTotal + " INTEGER," +
+                outgoingTimeTotal + " INTEGER" +
                 " ) ");
         db.execSQL("CREATE TABLE IF NOT EXISTS " + SyncedTable +
                 " ( " +
@@ -747,8 +841,9 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 note + " TEXT, " +
                 callDate + " TEXT, " +
                 name + " TEXT, " +
-                FriendEmail+" TEXT,"+
-                category+" TEXT "+
+                FriendEmail + " TEXT," +
+                reminder + " TEXT, " +
+                category + " TEXT " +
                 " ) ");
         db.execSQL("CREATE TABLE IF NOT EXISTS " + incomingCallTable +
                 " ( " +
@@ -766,6 +861,188 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 callDate + " TEXT, " +
                 name + " TEXT " +
                 " ) ");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + categories +
+                " ( " +
+                ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                category + " TEXT, " +
+                color + " TEXT " +
+                " ) ");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + PrestaShop +
+                " ( " +
+                ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                name + " TEXT, " +
+                surname + " TEXT, " +
+                orderState + " TEXT, " +
+                orderNumber + " INTEGER, " +
+                phoneNumber + " TEXT, " +
+                date + " TEXT " +
+                " ) ");
+        db.execSQL("CREATE TABLE IF NOT EXISTS " + PrestaShopNewItems +
+                " ( " +
+                ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                name + " TEXT, " +
+                surname + " TEXT, " +
+                orderState + " TEXT, " +
+                orderNumber + " INTEGER, " +
+                phoneNumber + " TEXT, " +
+                date + " TEXT " +
+                " ) ");
+    }
+
+    public void insertPrestashopOrder(Order order) {
+        openDatabase();
+        String SQL = "INSERT OR REPLACE INTO  " + PrestaShop + " ( " +
+                this.name + " , " +
+                this.surname + " , " +
+                this.orderState + " , " +
+                this.orderNumber + " , " +
+                this.phoneNumber + " , " +
+                this.date +
+                " ) VALUES ( '" +
+                order.getName() + "' , '" +
+                order.getSurname() + "' , '" +
+                order.getOrder_state() + "' , '" +
+                order.getOrder_nr() + "' , '" +
+                order.getPhone_nr() + "' , '" +
+                order.getDate() +
+                "' ) ";
+        noteDatabase.execSQL(SQL);
+
+        sendBroadcast(context);
+        closeDatabase();
+    }
+
+    public void insertNewPrestaOrder(Order order) {
+        openDatabase();
+        String SQL = "INSERT OR REPLACE INTO " + PrestaShopNewItems + " ( " +
+                this.name + " , " +
+                this.surname + " , " +
+                this.orderState + " , " +
+                this.orderNumber + " , " +
+                this.phoneNumber + " , " +
+                this.date +
+                " ) VALUES ( '" +
+                order.getName() + "' , '" +
+                order.getSurname() + "' , '" +
+                order.getOrder_state() + "' , '" +
+                order.getOrder_nr() + "' , '" +
+                order.getPhone_nr() + "' , '" +
+                order.getDate() +
+                "' ) ";
+
+        noteDatabase.execSQL(SQL);
+        closeDatabase();
+    }
+
+    public ArrayList<IGenericItem> getNewPrestaByNr(String nr, String originalNr) {
+        openDatabase();
+        ArrayList<IGenericItem> orders = new ArrayList<>();
+        String SQL = "SELECT * FROM " + PrestaShopNewItems + " WHERE "
+                + this.phoneNumber + "='" + nr + "' OR " +
+                this.phoneNumber + " = '" + originalNr + "'";
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Integer id = cursor.getInt(0);
+                String name = cursor.getString(1);
+                String surname = cursor.getString(2);
+                String orderState = cursor.getString(3);
+                String orderNumber = cursor.getString(4);
+                String phoneNumber = cursor.getString(5);
+                String date = cursor.getString(6);
+                if (name.equals("")) {
+                    name = phoneNumber;
+                    surname = "";
+                }
+                Order order = new Order(name, surname, phoneNumber, orderNumber, orderState, date);
+                orders.add(order);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        //closeDatabase();
+        return orders;
+    }
+
+
+    public ArrayList<IGenericItem> getPrestashopByNr(String nr, String originalNr) {
+        openDatabase();
+        ArrayList<IGenericItem> orders = new ArrayList<>();
+        String SQL = "SELECT * FROM " + PrestaShop + " WHERE "
+                + this.phoneNumber + "='" + nr + "' OR " +
+                this.phoneNumber + " = '" + originalNr + "'";
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Integer id = cursor.getInt(0);
+                String name = cursor.getString(1);
+                String surname = cursor.getString(2);
+                String orderState = cursor.getString(3);
+                String orderNumber = cursor.getString(4);
+                String phoneNumber = cursor.getString(5);
+                String date = cursor.getString(6);
+                if (name.equals("")) {
+                    name = phoneNumber;
+                    surname = "";
+                }
+                Order order = new Order(name, surname, phoneNumber, orderNumber, orderState, date);
+                orders.add(order);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        //closeDatabase();
+        return orders;
+    }
+
+    public ArrayList<IGenericItem> getPrestashopData() {
+        openDatabase();
+        ArrayList<IGenericItem> orders = new ArrayList<>();
+        String SQL = "SELECT * FROM " + PrestaShop;
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Integer id = cursor.getInt(0);
+                String name = cursor.getString(1);
+                String surname = cursor.getString(2);
+                String orderState = cursor.getString(3);
+                String orderNumber = cursor.getString(4);
+                String phoneNumber = cursor.getString(5);
+                String date = cursor.getString(6);
+                Order order = new Order(name, surname, phoneNumber, orderNumber, orderState, date);
+                orders.add(order);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        //closeDatabase();
+
+        return orders;
+    }
+
+    public ArrayList<IGenericItem> getNewPrestashopData() {
+        openDatabase();
+        ArrayList<IGenericItem> orders = new ArrayList<>();
+        String SQL = "SELECT * FROM " + PrestaShopNewItems;
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
+
+        if (cursor.moveToFirst()) {
+            do {
+                Integer id = cursor.getInt(0);
+                String name = cursor.getString(1);
+                String surname = cursor.getString(2);
+                String orderState = cursor.getString(3);
+                String orderNumber = cursor.getString(4);
+                String phoneNumber = cursor.getString(5);
+                String date = cursor.getString(6);
+                Order order = new Order(name, surname, phoneNumber, orderNumber, orderState, date);
+                orders.add(order);
+            } while (cursor.moveToNext());
+        }
+        cursor.close();
+        //closeDatabase();
+
+        return orders;
     }
 
     @Override
@@ -783,8 +1060,8 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     this.callTime + " , " +
                     this.name + " , " +
                     this.catchCall + " , " +
-                    this.Reminder + " , " +
-                    this.category+
+                    this.reminder + " , " +
+                    this.category +
                     " ) VALUES ( '" +
                     note.getPhoneNumber() + "' , '" +
                     note.getNotes(true) + "' , '" +
@@ -793,16 +1070,16 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     note.getName() + "' , '" +
                     note.getCatchCall() + "' , '" +
                     note.getReminder() + "' , '" +
-                    note.getCategory()+
+                    note.getCategory() +
                     "' ) ";
 
-            NoteDatabase.execSQL(SQL);
+            noteDatabase.execSQL(SQL);
         }
         sendBroadcast(context);
         closeDatabase();
     }
 
-    public void sendBroadcast(Context ctx){
+    public void sendBroadcast(Context ctx) {
         Intent local = new Intent();
         local.setAction("com.hello.updateList");
         ctx.sendBroadcast(local);
@@ -811,35 +1088,38 @@ public class Database extends SQLiteOpenHelper implements Serializable {
     public void insertToSyncedTable(ArrayList<ClassNote> syncedNotes) {
         openDatabase();
 
-        for(ClassNote note : syncedNotes) {
+        for (ClassNote note : syncedNotes) {
             String SQL = "INSERT INTO " + SyncedTable + " ( " +
                     this.number + " , " +
                     this.note + " , " +
                     this.callDate + " , " +
                     this.name + " , " +
                     this.FriendEmail + " , " +
+                    this.reminder + " , " +
                     this.category +
                     " ) VALUES ( '" +
                     note.getPhoneNumber() + "' , '" +
-                    note.getNotes(true)   + "' , '" +
-                    note.getCallDate()    + "' , '" +
-                    note.getName()        + "' , '" +
+                    note.getNotes(true) + "' , '" +
+                    note.getCallDate() + "' , '" +
+                    note.getName() + "' , '" +
                     note.getFriendEmail() + "' , '" +
-                    note.getCategory()    +
+                    note.getReminder() + "' , '" +
+                    note.getCategory() +
                     "' ) ";
 
-            NoteDatabase.execSQL(SQL);
+            noteDatabase.execSQL(SQL);
         }
         //closeDatabase();
     }
-    public ArrayList<ClassNote> getSyncedData() {
+
+    public ArrayList<IGenericItem> getSyncedData() {
         openDatabase();
 
         dataList = new ArrayList<>();
 
         String SQL = "SELECT * FROM " + SyncedTable;
 
-        Cursor cursor = NoteDatabase.rawQuery(SQL, null);
+        Cursor cursor = noteDatabase.rawQuery(SQL, null);
 
         if (cursor.moveToFirst()) {
             do {
@@ -849,9 +1129,10 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 String callDate = cursor.getString(3);
                 String name = cursor.getString(4);
                 String email = cursor.getString(5);
-                String category = cursor.getString(6);
+                String reminder = cursor.getString(6);
+                String category = cursor.getString(7);
                 ClassNote classNote = new ClassNote(id);
-                if(!category.equals("Personal ")) {
+                if (!category.equals("Personal ")) {
                     classNote.setPhoneNumber(number);
                     classNote.setNotes(note);
                     classNote.setCallDate(callDate);
@@ -859,7 +1140,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     classNote.setSynced(1);
                     classNote.setFriendEmail(email);
                     classNote.setCategory(category);
-                    classNote.setReminder("");
+                    classNote.setReminder(reminder);
 
                     dataList.add(classNote);
                 }

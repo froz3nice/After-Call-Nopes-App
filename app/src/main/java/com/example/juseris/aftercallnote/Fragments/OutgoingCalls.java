@@ -26,6 +26,7 @@ import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Models.ContactEntity;
 import com.example.juseris.aftercallnote.R;
+import com.example.juseris.aftercallnote.Utils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -45,6 +46,7 @@ public class OutgoingCalls extends Fragment {
     private ListView incomingLog;
     private RelativeLayout layout;
     private Database db;
+
     @Override
     public View onCreateView(LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -52,12 +54,11 @@ public class OutgoingCalls extends Fragment {
         // properly.
         View rootView = inflater.inflate(
                 R.layout.outgoing_calls_fragment, container, false);
-        layout = (RelativeLayout)rootView.findViewById(R.id.loadingPanel);
+        layout = (RelativeLayout) rootView.findViewById(R.id.loadingPanel);
         incomingLog = (ListView) rootView.findViewById(R.id.incomingCalls);
         db = new Database(getActivity());
-        LoadContact loadContact = new LoadContact();
-        loadContact.execute();
-       /* Bundle args = getArguments();
+        new LoadContact().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        /* Bundle args = getArguments();
         ((TextView) rootView.findViewById(android.R.id.text1)).setText(
                 Integer.toString(args.getInt(ARG_OBJECT)));*/
         return rootView;
@@ -116,60 +117,61 @@ public class OutgoingCalls extends Fragment {
             return null;
         }
 
-            @Override
-            protected void onPostExecute (Void aVoid) {
-                super.onPostExecute(aVoid);
-                layout.setVisibility(View.GONE);
-                if (getActivity() != null) {
-                    if (!PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean("AddedFromLog", false)) {
-                        Collections.reverse(contacts);
-                        db.insertOutgoingCalls(contacts);
-                        Collections.reverse(contacts);
-                        PreferenceManager.getDefaultSharedPreferences(getActivity())
-                                .edit()
-                                .putBoolean("AddedFromLog", true)
-                                .apply();
-                    }
-                    final OutCallsAdapter listAdapter = new OutCallsAdapter(getActivity(), contacts);
-                    listAdapter.notifyDataSetChanged();
-                    incomingLog.setAdapter(listAdapter);
-                    incomingLog.setItemsCanFocus(true);
-                    boolean chooseContact = PreferenceManager.getDefaultSharedPreferences(getActivity())
-                            .getBoolean("haveToChooseContact", false);
-                    if (chooseContact) {
-                        incomingLog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                            @Override
-                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                                //CustomAdapter.ViewHolder holder = (CustomAdapter.ViewHolder) view.getTag();
-                                Intent intent = new Intent(getActivity(), ActivityPopupAfter.class);
-                                PreferenceManager.getDefaultSharedPreferences(getActivity())
-                                        .edit().putString("ChosenNumber", listAdapter.getItem(position).getNumber()).apply();
-                                startActivity(intent);
-                                PreferenceManager.getDefaultSharedPreferences(getActivity())
-                                        .edit().putBoolean("haveToChooseContact", false).apply();
-                            }
-                        });
-                    } else {
-                        incomingLog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                            @Override
-                            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                                //CustomAdapter.ViewHolder holder = (CustomAdapter.ViewHolder) view.getTag();
-                                Intent intent = new Intent(getActivity(), MainListChildItem.class);
-                                ClassNote note = new ClassNote();
-                                note.setPhoneNumber(fixNumber(listAdapter.getItem(position).getNumber()));
-                                note.setName(listAdapter.getItem(position).getName());
-                                intent.putExtra("classNoteobj", note);
-                                startActivity(intent);
-                            }
-                        });
-                    }
-                    incomingLog.setFastScrollEnabled(true);
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            layout.setVisibility(View.GONE);
+            if (getActivity() != null) {
+                if (!PreferenceManager.getDefaultSharedPreferences(getActivity()).getBoolean("AddedFromLog", false)) {
+                    Collections.reverse(contacts);
+                    db.insertOutgoingCalls(contacts);
+                    Collections.reverse(contacts);
+                    PreferenceManager.getDefaultSharedPreferences(getActivity())
+                            .edit()
+                            .putBoolean("AddedFromLog", true)
+                            .apply();
                 }
-                PreferenceManager.getDefaultSharedPreferences(getActivity())
-                        .edit()
-                        .putBoolean("wasOutgoingAdded", true)
-                        .apply();
+                final OutCallsAdapter listAdapter = new OutCallsAdapter(getActivity(), contacts);
+                listAdapter.notifyDataSetChanged();
+                incomingLog.setAdapter(listAdapter);
+                incomingLog.setItemsCanFocus(true);
+                boolean chooseContact = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                        .getBoolean("haveToChooseContact", false);
+                if (chooseContact) {
+                    incomingLog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            //MainAdapter.ViewHolder holder = (MainAdapter.ViewHolder) view.getTag();
+                            //Intent intent = new Intent(getActivity(), ActivityPopupAfter.class);
+                            PreferenceManager.getDefaultSharedPreferences(getActivity())
+                                    .edit().putString("ChosenNumber", listAdapter.getItem(position).getNumber()).apply();
+                            // startActivity(intent);
+                            PreferenceManager.getDefaultSharedPreferences(getActivity())
+                                    .edit().putBoolean("haveToChooseContact", false).apply();
+                            getActivity().finish();
+                        }
+                    });
+                } else {
+                    incomingLog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            //MainAdapter.ViewHolder holder = (MainAdapter.ViewHolder) view.getTag();
+                            Intent intent = new Intent(getActivity(), MainListChildItem.class);
+                            ClassNote note = new ClassNote();
+                            note.setPhoneNumber(Utils.fixNumber(listAdapter.getItem(position).getNumber()));
+                            note.setName(listAdapter.getItem(position).getName());
+                            intent.putExtra("classNoteobj", note);
+                            startActivity(intent);
+                        }
+                    });
+                }
+                incomingLog.setFastScrollEnabled(true);
             }
+            PreferenceManager.getDefaultSharedPreferences(getActivity())
+                    .edit()
+                    .putBoolean("wasOutgoingAdded", true)
+                    .apply();
+        }
 
     }
 
@@ -180,7 +182,7 @@ public class OutgoingCalls extends Fragment {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(Long.parseLong(callTime));
             tm = formatter.format(calendar.getTime());
-        }catch (Exception e) {
+        } catch (Exception e) {
             tm = "";
         }
         return tm;
@@ -199,38 +201,11 @@ public class OutgoingCalls extends Fragment {
             //Will Throw exception!
             //do something! anything to handle the exception.
         }
-        String time = String.valueOf(seconds)+" s";
-        if(minutes != 0){
-            time = minutes+" min "+seconds+" s";
+        String time = String.valueOf(seconds) + " s";
+        if (minutes != 0) {
+            time = minutes + " min " + seconds + " s";
         }
         return time;
     }
 
-
-    // Load data on background
-
-
-    private String fixNumber(String number) {
-        String Number = null; //= number;
-        if (number.length() < 2) return "";
-        try {
-            Number = number.replaceAll("[ ()#~!-]", "");
-            String FirstNumbers = Number.substring(0, 2);
-            if (FirstNumbers.equalsIgnoreCase("86")) {
-                Number = "+3706" + Number.substring(2, Number.length());
-            }
-            if (FirstNumbers.equalsIgnoreCase("85")) {
-                Number = "+3705" + Number.substring(2, Number.length());
-            }
-            if (FirstNumbers.equalsIgnoreCase("83")) {
-                Number = "+3703" + Number.substring(2, Number.length());
-            }
-        } catch (Exception ex) {
-            Toast.makeText(getActivity(),
-                    String.valueOf(Number) + "`" + ex.toString() + "`" + String.valueOf(number),
-                    Toast.LENGTH_LONG).show();
-        }
-
-        return Number;
-    }
 }

@@ -4,10 +4,11 @@
     <item android:id="@+id/edit_note"
         android:title="@string/Settings_edit"
         app:showAsAction="never"  />
-    <item android:id="@+id/share_note"
-        android:title="@string/shareNote"
-        app:showAsAction="never"  />
     <item android:id="@+id/delete_note"
         android:title="@string/Settings_delete"
         app:showAsAction="never"  />
+    <item android:id="@+id/share_note"
+        android:title="@string/shareNote"
+        app:showAsAction="never"  />
+
 </menu>

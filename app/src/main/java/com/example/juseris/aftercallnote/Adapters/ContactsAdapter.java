@@ -64,14 +64,14 @@ public class ContactsAdapter extends BaseAdapter {
                 //Log.d("POSITION", String.valueOf(position));
                 String _date = "";
                 _date = objects.get(position).getCallTime();
-                if(_date.equals("ExceptionTrigger")) {
-                   // int botPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5
+                if (_date.equals("ExceptionTrigger")) {
+                    // int botPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5
                     //        , context.getResources().getDisplayMetrics());
                     //holder.text1.setPadding(0, 0, 0, botPadding);
-                   // holder.text2.setVisibility(View.GONE);
+                    // holder.text2.setVisibility(View.GONE);
                     holder.text2.setText(objects.get(position).getNumber());
                     Log.e("Tag", "Exception");
-                }else {
+                } else {
                     holder.text2.setText(_date + ", " + objects.get(position).getCallDuration());
                 }
             }

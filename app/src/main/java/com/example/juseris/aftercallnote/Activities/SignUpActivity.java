@@ -35,6 +35,8 @@ import com.google.firebase.database.MutableData;
 import com.google.firebase.database.Transaction;
 import com.google.firebase.database.ValueEventListener;
 
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
+
 /**
  * Created by juseris on 2/24/2017.
  */
@@ -49,6 +51,11 @@ public class SignUpActivity extends AppCompatActivity {
     private Button btnSignIn, btnSignUp;
     private ProgressBar progressBar;
     boolean isUsernameTaken = false;
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -77,7 +84,7 @@ public class SignUpActivity extends AppCompatActivity {
         btnSignIn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(SignUpActivity.this,LoginActivity.class);
+                Intent i = new Intent(SignUpActivity.this, LoginActivity.class);
                 startActivity(i);
                 finish();
             }
@@ -108,12 +115,14 @@ public class SignUpActivity extends AppCompatActivity {
                     return;
                 }
                 progressBar.setVisibility(View.VISIBLE);
-                createUser(email,password);
+                createUser(email, password);
             }
         });
     }
+
     DatabaseReference myRef;
-    public void createUser(String email,String password){
+
+    public void createUser(String email, String password) {
         //create user
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(SignUpActivity.this, new OnCompleteListener<AuthResult>() {
@@ -134,7 +143,7 @@ public class SignUpActivity extends AppCompatActivity {
                             Toast.makeText(SignUpActivity.this, "User successfully created", Toast.LENGTH_SHORT).show();
                             Toast.makeText(SignUpActivity.this, "Now please verify your email", Toast.LENGTH_LONG).show();
                             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                            if(user != null) {
+                            if (user != null) {
                                 user.sendEmailVerification();
                             }
                             FirebaseAuth.getInstance().signOut();

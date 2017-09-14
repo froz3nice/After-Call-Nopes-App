@@ -1,6 +1,7 @@
 package com.example.juseris.aftercallnote.Activities;
 
 import android.content.ContentResolver;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.os.AsyncTask;
@@ -21,6 +22,7 @@ import com.example.juseris.aftercallnote.Fragments.IncomingCalls;
 import com.example.juseris.aftercallnote.Fragments.OutgoingCalls;
 import com.example.juseris.aftercallnote.Models.ContactEntity;
 import com.example.juseris.aftercallnote.R;
+import com.example.juseris.aftercallnote.XmlHandling;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.ogaclejapan.smarttablayout.SmartTabLayout;
@@ -32,12 +34,19 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
 
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
+
 public class AllCallsActivity extends AppCompatActivity {
     private ArrayList<ContactEntity> contacts;
     private long contactID = 0;
-   // private ListView incomingLog;
+    // private ListView incomingLog;
     public Cursor phones;
     public ContentResolver resolver;
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,9 +81,8 @@ public class AllCallsActivity extends AppCompatActivity {
 
         boolean hasSyncedCall = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                 .getBoolean("IncomingSynced", false);
-        if(!hasSyncedCall) {
-            LoadContact async = new LoadContact();
-            async.execute();
+        if (!hasSyncedCall) {
+            new LoadContact().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     }
    /* @Override
@@ -183,7 +191,7 @@ public class AllCallsActivity extends AppCompatActivity {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(Long.parseLong(callTime));
             tm = formatter.format(calendar.getTime());
-        }catch (Exception e) {
+        } catch (Exception e) {
             tm = "";
         }
         return tm;
@@ -203,9 +211,9 @@ public class AllCallsActivity extends AppCompatActivity {
             //Will Throw exception!
             //do something! anything to handle the exception.
         }
-        String time = String.valueOf(seconds)+" s";
-        if(minutes != 0){
-            time = minutes+" min "+seconds+" s";
+        String time = String.valueOf(seconds) + " s";
+        if (minutes != 0) {
+            time = minutes + " min " + seconds + " s";
         }
         return time;
     }

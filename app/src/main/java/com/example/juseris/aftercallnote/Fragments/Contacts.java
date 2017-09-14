@@ -21,6 +21,7 @@ import com.example.juseris.aftercallnote.Adapters.ContactsAdapter;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Models.ContactEntity;
 import com.example.juseris.aftercallnote.R;
+import com.example.juseris.aftercallnote.Utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,7 +32,7 @@ import java.util.Comparator;
  */
 
 
-public class Contacts extends Fragment{
+public class Contacts extends Fragment {
 
     public static final String ARG_OBJECT = "object";
     private ListView incomingLog;
@@ -65,9 +66,9 @@ public class Contacts extends Fragment{
         @Override
         protected Void doInBackground(Void... voids) {
             contacts = new ArrayList<>();
-            if(getActivity() != null) {
+            if (getActivity() != null) {
                 Cursor phones = getActivity().getContentResolver().query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, null, null, null, null);
-                if(phones!= null) {
+                if (phones != null) {
                     while (phones.moveToNext()) {
                         String name = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME));
                         String phoneNumber = phones.getString(phones.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
@@ -83,75 +84,49 @@ public class Contacts extends Fragment{
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            Collections.sort(contacts, new Comparator<ContactEntity>() {
-                @Override
-                public int compare(ContactEntity a, ContactEntity b) {
-                    return a.getName().compareTo(b.getName());
+            if (getActivity() != null) {
+                Collections.sort(contacts, new Comparator<ContactEntity>() {
+                    @Override
+                    public int compare(ContactEntity a, ContactEntity b) {
+                        return a.getName().compareTo(b.getName());
+                    }
+                });
+                final ContactsAdapter listAdapter = new ContactsAdapter(getActivity(), contacts);
+                listAdapter.notifyDataSetChanged();
+                incomingLog.setAdapter(listAdapter);
+                incomingLog.setItemsCanFocus(true);
+                boolean chooseContact = PreferenceManager.getDefaultSharedPreferences(getActivity())
+                        .getBoolean("haveToChooseContact", false);
+                if (chooseContact) {
+                    incomingLog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            //MainAdapter.ViewHolder holder = (MainAdapter.ViewHolder) view.getTag();
+                            //Intent intent = new Intent(getActivity(), ActivityPopupAfter.class);
+                            PreferenceManager.getDefaultSharedPreferences(getActivity())
+                                    .edit().putString("ChosenNumber", listAdapter.getItem(position).getNumber()).apply();                       // startActivity(intent);
+                            PreferenceManager.getDefaultSharedPreferences(getActivity())
+                                    .edit().putBoolean("haveToChooseContact", false).apply();
+                            getActivity().finish();
+                        }
+                    });
+                } else {
+                    incomingLog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                            //MainAdapter.ViewHolder holder = (MainAdapter.ViewHolder) view.getTag();
+                            Intent intent = new Intent(getActivity(), MainListChildItem.class);
+                            ClassNote note = new ClassNote();
+                            note.setPhoneNumber(Utils.fixNumber(listAdapter.getItem(position).getNumber()));
+                            note.setName(listAdapter.getItem(position).getName());
+                            intent.putExtra("classNoteobj", note);
+                            startActivity(intent);
+                        }
+                    });
                 }
-            });
-            final ContactsAdapter listAdapter = new ContactsAdapter(getActivity(), contacts);
-            listAdapter.notifyDataSetChanged();
-            incomingLog.setAdapter(listAdapter);
-            incomingLog.setItemsCanFocus(true);
-            boolean chooseContact = PreferenceManager.getDefaultSharedPreferences(getActivity())
-                    .getBoolean("haveToChooseContact", false);
-            if(chooseContact){
-                incomingLog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                        //CustomAdapter.ViewHolder holder = (CustomAdapter.ViewHolder) view.getTag();
-                        Intent intent = new Intent(getActivity(), ActivityPopupAfter.class);
-                        PreferenceManager.getDefaultSharedPreferences(getActivity())
-                                .edit().putString("ChosenNumber", listAdapter.getItem(position).getNumber()).apply();                        startActivity(intent);
-                        PreferenceManager.getDefaultSharedPreferences(getActivity())
-                                .edit().putBoolean("haveToChooseContact", false).apply();
-                    }
-                });
-            }else {
-                incomingLog.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                        //CustomAdapter.ViewHolder holder = (CustomAdapter.ViewHolder) view.getTag();
-                        Intent intent = new Intent(getActivity(), MainListChildItem.class);
-                        ClassNote note = new ClassNote();
-                        note.setPhoneNumber(fixNumber(listAdapter.getItem(position).getNumber()));
-                        note.setName(listAdapter.getItem(position).getName());
-                        intent.putExtra("classNoteobj", note);
-                        startActivity(intent);
-                    }
-                });
+                incomingLog.setFastScrollEnabled(true);
+                layout.setVisibility(View.GONE);
             }
-            incomingLog.setFastScrollEnabled(true);
-            layout.setVisibility(View.GONE);
         }
     }
-
-
-
-    private String fixNumber(String number) {
-        String Number = null; //= number;
-        if (number.length() < 2) return "";
-        try {
-            Number = number.replaceAll("[ ()#~!-]", "");
-            String FirstNumbers = Number.substring(0, 2);
-            if (FirstNumbers.equalsIgnoreCase("86")) {
-                Number = "+3706" + Number.substring(2, Number.length());
-            }
-            if (FirstNumbers.equalsIgnoreCase("85")) {
-                Number = "+3705" + Number.substring(2, Number.length());
-            }
-            if (FirstNumbers.equalsIgnoreCase("83")) {
-                Number = "+3703" + Number.substring(2, Number.length());
-            }
-        } catch (Exception ex) {
-            Toast.makeText(getActivity(),
-                    String.valueOf(Number) + "`" + ex.toString() + "`" + String.valueOf(number),
-                    Toast.LENGTH_LONG).show();
-        }
-
-        return Number;
-    }
-
-
-
 }

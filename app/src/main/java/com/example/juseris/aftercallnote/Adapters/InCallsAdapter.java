@@ -1,9 +1,6 @@
 package com.example.juseris.aftercallnote.Adapters;
+
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapShader;
-import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -19,7 +16,6 @@ import android.widget.TextView;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.ContactEntity;
 import com.example.juseris.aftercallnote.R;
-import com.squareup.picasso.Transformation;
 
 import java.util.ArrayList;
 
@@ -61,10 +57,10 @@ public class InCallsAdapter extends BaseAdapter {
         final ViewHolder holder = new ViewHolder();
         convertView = null;
         if (convertView == null) {
-            convertView = inflater.inflate(R.layout.incoming_call_item, parent, false);
+            convertView = inflater.inflate(R.layout.list_item_incoming, parent, false);
             holder.text1 = (TextView) convertView.findViewById(R.id.text1);
             holder.text2 = (TextView) convertView.findViewById(R.id.text2);
-            holder.overflow = (ImageButton)convertView.findViewById(R.id.overFlow);
+            holder.overflow = (ImageButton) convertView.findViewById(R.id.overFlow);
             if (objects == null || objects.size() == 0) {
             } else {
 
@@ -76,14 +72,14 @@ public class InCallsAdapter extends BaseAdapter {
                 //Log.d("POSITION", String.valueOf(position));
                 String _date = "";
                 _date = objects.get(position).getCallTime();
-                if(_date.equals("ExceptionTrigger")) {
+                if (_date.equals("ExceptionTrigger")) {
                     // int botPadding = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 5
                     //        , context.getResources().getDisplayMetrics());
                     //holder.text1.setPadding(0, 0, 0, botPadding);
                     // holder.text2.setVisibility(View.GONE);
                     holder.text2.setText(objects.get(position).getNumber());
                     Log.e("Tag", "Exception");
-                }else {
+                } else {
                     holder.text2.setText(_date + ", " + objects.get(position).getCallDuration());
                 }
                 holder.overflow.setTag(position);

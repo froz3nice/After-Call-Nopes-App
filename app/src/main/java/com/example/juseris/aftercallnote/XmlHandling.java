@@ -1,15 +1,23 @@
 package com.example.juseris.aftercallnote;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.example.juseris.aftercallnote.Models.Order;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;
@@ -34,22 +42,31 @@ import javax.xml.parsers.ParserConfigurationException;
  */
 
 public class XmlHandling {
-    private final FirebaseDatabase database;
     private final DatabaseReference myRef;
+    private final SharedPreferences prefs;
+    private String key;
+    private String urlName;
     Context context;
+    FirebaseUser user;
+    private Database db;
+    private long syncedItemsCount = 0;
+
     public XmlHandling(Context ctx) {
         context = ctx;
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference();
-        new Test().execute();
+        key = context.getString(R.string.prestashop_key);
+        urlName = "https://www.medikos.lt";
+        myRef = Utils.getDatabase().getReference();
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        prefs = PreferenceManager.getDefaultSharedPreferences(context);
+        db = new Database(context);
+        new Test().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 
     private Document getXmlFileDocument(URL url) throws IOException, ParserConfigurationException, SAXException {
         HttpURLConnection urlConnection = null;
         Document doc = null;
         try {
-
-            String username = context.getString(R.string.prestashop_key);
+            String username = key;
             String password = "";// leave it empty
             String authToBytes = username + ":" + password;
             //....
@@ -66,10 +83,10 @@ public class XmlHandling {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
             doc = db.parse(xml);
-        }catch (Exception e){
-            Log.e("Connection error","connection aborted");
+        } catch (Exception e) {
+            Log.e("Connection error", "connection aborted");
             e.printStackTrace();
-        }finally {
+        } finally {
             if (urlConnection != null) {
                 urlConnection.disconnect();
             }
@@ -77,88 +94,147 @@ public class XmlHandling {
         return doc;
     }
 
+    int index = 0;
 
-    private ArrayList<Order> getOrdersData(URL url)  {
+    private ArrayList<Order> getOrdersData(URL url) {
         ArrayList<Order> orders = new ArrayList<>();
         try {
             Document doc = getXmlFileDocument(url);
             doc.getDocumentElement().normalize();
 
             NodeList nList = doc.getElementsByTagName("order");
-            System.out.println("----------------------------");
-            System.out.println("attrib " + nList.item(0).getAttributes().getNamedItem("xlink:href").getNodeValue());
-            for (int temp = 0; temp < nList.getLength(); temp++) {
-                Order order = new Order();
-                Node nNode = nList.item(temp);
-                String id = nNode.getAttributes().getNamedItem("id").getNodeValue();
-                String link = nNode.getAttributes().getNamedItem("xlink:href").getNodeValue();
-                try {
-                    Document document = getXmlFileDocument(new URL(link));
-                    document.getDocumentElement().normalize();
-                    NodeList customer = document.getElementsByTagName("id_customer");
-                    String customerUrl = customer.item(0).getAttributes().getNamedItem("xlink:href").getNodeValue();
-                    String firstName;
-                    String lastName;
-                    String orderState;
-                    String phoneNr;
-                    try {
-                        Document customerDoc = getXmlFileDocument(new URL(customerUrl));
-                        customerDoc.getDocumentElement().normalize();
-
-                        NodeList firstNameNode = customerDoc.getElementsByTagName("firstname");
-                        NodeList lastNameNode = customerDoc.getElementsByTagName("lastname");
-
-                        Element firstNameElement = (Element) firstNameNode.item(0);
-                        Element lastNameElement = (Element) lastNameNode.item(0);
-
-                        firstName = getCharacterDataFromElement(firstNameElement);
-                        lastName = getCharacterDataFromElement(lastNameElement);
-                    }catch(Exception e){
-                        e.printStackTrace();
-                        firstName = "";
-                        lastName = "";
-                    }
-                    NodeList orderStateNode = document.getElementsByTagName("current_state");
-                    String orderStateUrl = orderStateNode.item(0).getAttributes().getNamedItem("xlink:href").getNodeValue();
-                    try{
-                        Document orderStateDoc = getXmlFileDocument(new URL(orderStateUrl));
-                        orderStateDoc.getDocumentElement().normalize();
-
-                        NodeList orderNameTag = orderStateDoc.getElementsByTagName("name");
-                        NodeList orderLanguageTag =  orderNameTag.item(0).getChildNodes();
-                        Element orderStateElement = (Element) orderLanguageTag.item(0);
-                        orderState = getCharacterDataFromElement(orderStateElement);
-                    }catch (Exception e){
-                        e.printStackTrace();
-                        orderState = "";
-                    }
-                    NodeList nodeForPhoneNr = document.getElementsByTagName("id_address_delivery");
-                    String phoneNrUrl = nodeForPhoneNr.item(0).getAttributes().getNamedItem("xlink:href").getNodeValue();
-                    try{
-                        Document phoneNrDoc = getXmlFileDocument(new URL(phoneNrUrl));
-                        phoneNrDoc.getDocumentElement().normalize();
-
-                        NodeList phoneNrNode = phoneNrDoc.getElementsByTagName("phone_mobile");
-                        Element phoneNrElement = (Element) phoneNrNode.item(0);
-                        phoneNr = getCharacterDataFromElement(phoneNrElement);
-                    }catch (Exception e){
-                        e.printStackTrace();
-                        phoneNr = "";
-                    }
-                    order.setId(id);
-                    order.setName(firstName);
-                    order.setSurname(lastName);
-                    order.setOrder_state(orderState);
-                    order.setPhone_nr(phoneNr);
-                    orders.add(order);
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+            int size = nList.getLength();
+            boolean firstTimeDownload = prefs.getBoolean("firstTimeDownloading", true);
+            int index = prefs.getInt("lastDownloadedItem", size - 1);
+            if (firstTimeDownload) {
+                prefs.edit().putInt("lastLatestItemToDownload", size).apply();
             }
-        }catch(Exception e){
+            int lastLatestItem = prefs.getInt("lastLatestItemToDownload", size - 1);
+            if (size - 1 > lastLatestItem) {
+                int lastLatestItemToDwnld = 0;
+                for (int temp = size - 1; temp > prefs.getInt("lastLatestItemToDownload", size - 1); temp--) {
+                    Order order = getOrder(temp, nList);
+                    if (order.getOrder_nr() != null) {
+                        orders.add(order);
+                        if (user != null) {
+                            insertOrdersToFirebase(nList, order);
+                            db.insertNewPrestaOrder(order);
+                        }
+                    }
+                }
+                prefs.edit().putInt("lastLatestItemToDownload", size).apply();
+            }
+
+            for (int temp = index; temp > 0; temp--) {
+                Order order = getOrder(temp, nList);
+                if (order.getOrder_nr() != null) {
+                    orders.add(order);
+                    if (user != null) {
+                        insertOrdersToFirebase(nList, order);
+                        db.insertPrestashopOrder(order);
+                        //lastDownloadedRef.setValue(temp+1);
+                        prefs.edit().putInt("lastDownloadedItem", temp).apply();
+                        if (temp > size - 2) {
+                            prefs.edit().putBoolean("areOrdersDownloaded", true).apply();
+                        }
+                    }
+                }
+                prefs.edit().putBoolean("firstTimeDownloading", false).apply();
+            }
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return orders;
+    }
+
+    private Order getOrder(int temp, NodeList nList) {
+        long a = System.currentTimeMillis();
+        try {
+            Node nNode = nList.item(temp);
+            String id = nNode.getAttributes().getNamedItem("id").getNodeValue();
+            String link = nNode.getAttributes().getNamedItem("xlink:href").getNodeValue();
+            Document document = getXmlFileDocument(new URL(link));
+            document.getDocumentElement().normalize();
+            NodeList customer = document.getElementsByTagName("id_customer");
+            String customerUrl = customer.item(0).getAttributes().getNamedItem("xlink:href").getNodeValue();
+            String firstName;
+            String lastName;
+            try {
+                Document customerDoc = getXmlFileDocument(new URL(customerUrl));
+                customerDoc.getDocumentElement().normalize();
+
+                NodeList firstNameNode = customerDoc.getElementsByTagName("firstname");
+                NodeList lastNameNode = customerDoc.getElementsByTagName("lastname");
+
+                Element firstNameElement = (Element) firstNameNode.item(0);
+                Element lastNameElement = (Element) lastNameNode.item(0);
+
+                firstName = getCharacterDataFromElement(firstNameElement);
+                lastName = getCharacterDataFromElement(lastNameElement);
+            } catch (Exception e) {
+                e.printStackTrace();
+                firstName = "";
+                lastName = "";
+            }
+            String orderState = getOrderState(document);
+            String phoneNr = getPhoneNr(document);
+            String date = getDate(document);
+            return new Order(firstName, lastName, phoneNr, id, orderState, date);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new Order();
+        }
+    }
+
+    private void insertOrdersToFirebase(NodeList nList, Order order) {
+        String fixedUrl = urlName.replace(".", ",").substring(8, urlName.length());
+        DatabaseReference userRef = myRef.child("Prestashop").child(fixedUrl).push();
+        if (nList.getLength() - 1 > syncedItemsCount) {
+            userRef.setValue(order);
+        }
+    }
+
+    private String getOrderState(Document document) {
+        NodeList orderStateNode = document.getElementsByTagName("current_state");
+        String orderStateUrl = orderStateNode.item(0).getAttributes().getNamedItem("xlink:href").getNodeValue();
+        try {
+            Document orderStateDoc = getXmlFileDocument(new URL(orderStateUrl));
+            orderStateDoc.getDocumentElement().normalize();
+
+            NodeList orderNameTag = orderStateDoc.getElementsByTagName("name");
+            NodeList orderLanguageTag = orderNameTag.item(0).getChildNodes();
+            Element orderStateElement = (Element) orderLanguageTag.item(1);
+            return getCharacterDataFromElement(orderStateElement);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    private String getPhoneNr(Document document) {
+        NodeList nodeForPhoneNr = document.getElementsByTagName("id_address_delivery");
+        String phoneNrUrl = nodeForPhoneNr.item(0).getAttributes().getNamedItem("xlink:href").getNodeValue();
+        try {
+            Document phoneNrDoc = getXmlFileDocument(new URL(phoneNrUrl));
+            phoneNrDoc.getDocumentElement().normalize();
+
+            NodeList phoneNrNode = phoneNrDoc.getElementsByTagName("phone_mobile");
+            Element phoneNrElement = (Element) phoneNrNode.item(0);
+            return Utils.fixNumber(getCharacterDataFromElement(phoneNrElement));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
+
+    private String getDate(Document document) {
+        try {
+            NodeList nodeForDate = document.getElementsByTagName("date_add");
+            Element dateElement = (Element) nodeForDate.item(0);
+            return getCharacterDataFromElement(dateElement);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private String getCharacterDataFromElement(Element e) {
@@ -170,21 +246,41 @@ public class XmlHandling {
         return "";
     }
 
-    class Test extends AsyncTask<Void, ArrayList<Order> , ArrayList<Order>> {
+    class Test extends AsyncTask<Void, ArrayList<Order>, ArrayList<Order>> {
 
         private Exception exception;
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            String fixedUrl = urlName.replace(".", ",").substring(8, urlName.length());
+            DatabaseReference ref = myRef.child("Prestashop").child(fixedUrl);
+            ref.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if (dataSnapshot != null) {
+                        syncedItemsCount = dataSnapshot.getChildrenCount();
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                }
+            });
+        }
 
         protected ArrayList<Order> doInBackground(Void... urls) {
             URL url;
             ArrayList<Order> orders = new ArrayList<>();
             try {
                 long a = System.nanoTime();
-                url = new URL("http://@swims.lt/api/orders");
+                url = new URL(urlName + "/api/orders");
                 Document doc = getXmlFileDocument(url);
                 doc.getDocumentElement().normalize();
 
                 NodeList nList = doc.getElementsByTagName("order");
                 System.out.println("----------------------------");
+                //boolean isDownloaded = PreferenceManager.getDefaultSharedPreferences(context).getBoolean("areOrdersDownloaded",false);
                 orders = getOrdersData(url);
                 long b = System.nanoTime();
                 System.out.println(String.valueOf(b - a));
@@ -196,14 +292,14 @@ public class XmlHandling {
         }
 
         protected void onPostExecute(ArrayList<Order> feed) {
-            for(Order order : feed) {
-                String str = String.format(Locale.CANADA,"%s  %s  %s  %s",order.getId(),order.getName(),order.getOrder_state(),order.getSurname());
+            for (Order order : feed) {
+                String str = String.format(Locale.CANADA, "%s  %s  %s  %s", order.getOrder_nr(), order.getName(), order.getOrder_state(), order.getSurname());
                 System.out.println(str);
             }
-            FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-            if(user != null) {
-                DatabaseReference userRef = myRef.child("Prestashop").child("swims");
-                userRef.setValue(feed);
+            if (user != null) {
+                String fixedUrl = urlName.replace(".", ",");
+                //DatabaseReference userRef = myRef.child("Prestashop").child(fixedUrl);
+                // userRef.setValue(feed);
             }
         }
     }

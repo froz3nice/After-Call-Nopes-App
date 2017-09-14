@@ -1,39 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <TextView
-        android:text="@string/myAcc"
+        android:id="@+id/textView7"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="10dp"
-        android:id="@+id/textView7" />
+        android:text="@string/myAcc" />
 
     <TextView
-        android:text="@string/signIn"
+        android:id="@+id/textView8"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="10dp"
-        android:id="@+id/textView8" />
+        android:text="@string/signIn" />
 
     <TextView
-        android:text="@string/regEmail"
+        android:id="@+id/textView9"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginTop="10dp"
-        android:id="@+id/textView9" />
+        android:text="@string/regEmail" />
 
-    <View android:background="@color/colorAccent"
-        android:layout_width = "match_parent"
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
         android:layout_marginTop="5dp"
-        android:layout_height="1dp"/>
+        android:background="@color/colorAccent" />
 
     <ListView
         android:id="@+id/nav_sync_list"

@@ -4,16 +4,20 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
-import android.provider.Settings;
 import android.util.Log;
+import android.view.View;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.example.juseris.aftercallnote.Activities.MainActivity;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Models.ContactEntity;
 import com.example.juseris.aftercallnote.Models.ContactsEntity;
 import com.example.juseris.aftercallnote.Models.DataForSyncingModel;
+import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -32,22 +36,33 @@ import java.util.Iterator;
  */
 
 public class FirebaseConnection {
+    private MainActivity activity;
+    private RelativeLayout progressLayout;
     Context context;
-    FirebaseDatabase database;
     DatabaseReference myRef;
+    FirebaseDatabase database;
     Database db;
+
+    public FirebaseConnection(Context ctx, MainActivity activity) {
+        context = ctx;
+        myRef = Utils.getDatabase().getReference();
+        db = new Database(context);
+        this.activity = activity;
+        progressLayout = (RelativeLayout) activity.findViewById(R.id.loadingPanel);
+
+    }
+
     public FirebaseConnection(Context ctx) {
         context = ctx;
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference();
+        myRef = Utils.getDatabase().getReference();
         db = new Database(context);
     }
 
-    public void addIncomingCalls(final String email,final ArrayList<ContactEntity> contacts) {
+    public void addIncomingCalls(final String email, final ArrayList<ContactEntity> contacts) {
         final DatabaseReference userRef = myRef.child("IncomingCalls").child(email);
         boolean hasSyncedCall = PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean("IncomingSynced", false);
-        if(!hasSyncedCall) {
+        if (!hasSyncedCall) {
             DatabaseReference rootRef = myRef.child("IncomingCalls");
             rootRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
@@ -73,7 +88,7 @@ public class FirebaseConnection {
 
                             }
                         });
-                    }else{
+                    } else {
                         Collections.reverse(contacts);
                         userRef.setValue(contacts);
                         db.insertIncomingCalls(contacts);
@@ -88,15 +103,150 @@ public class FirebaseConnection {
             PreferenceManager.getDefaultSharedPreferences(context)
                     .edit().putBoolean("IncomingSynced", true).apply();
         }
-
-
     }
 
-    public void addOutgoingCalls(final String email,final ArrayList<ContactEntity> contacts) {
+
+    public void fetchDataFromFirebase(final String email) {
+        DatabaseReference SharedList = myRef.child("SyncList").child(email);
+        SharedList.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(final DataSnapshot dataSnapshot) {
+                // Load data on background
+                class LoadContact extends AsyncTask<Void, Void, Void> {
+                    @Override
+                    protected void onPreExecute() {
+                        super.onPreExecute();
+                        if (progressLayout != null) {
+                            progressLayout.setVisibility(View.VISIBLE);
+                        }
+                    }
+
+                    @Override
+                    protected Void doInBackground(Void... voids) {
+                        ArrayList<String> list = new ArrayList<>();
+                        for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
+                            String email = childSnapshot.getKey();
+                            list.add(email);
+                        }
+                        for (final String item : list) {
+                            DatabaseReference othersList = myRef.child("SyncList").child(item);
+                            othersList.addValueEventListener(new ValueEventListener() {
+
+                                @Override
+                                public void onDataChange(DataSnapshot dataSnapshot) {
+                                    if (dataSnapshot.hasChild(email)) {
+                                        DatabaseReference ref = myRef.child("Notes").child(item);
+                                        ref.keepSynced(true);
+                                        //ref.limitToFirst(1);
+                                        ref.addValueEventListener(new ValueEventListener() {
+                                            @Override
+                                            public void onDataChange(DataSnapshot dataSnapshot) {
+                                                addSyncedData(dataSnapshot, item);
+                                            }
+
+                                            @Override
+                                            public void onCancelled(DatabaseError databaseError) {
+                                                Log.w("RABARBARAS", "Failed to read value.", databaseError.toException());
+                                            }
+                                        });
+                                    }
+                                }
+
+                                @Override
+                                public void onCancelled(DatabaseError databaseError) {
+
+                                }
+                            });
+                        }
+
+                        return null;
+                    }
+
+                    @Override
+                    protected void onPostExecute(Void aVoid) {
+                        super.onPostExecute(aVoid);
+                        if (progressLayout != null) {
+                            progressLayout.setVisibility(View.GONE);
+                        }
+                    }
+                }
+                new LoadContact().execute();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                // Failed to read value
+                Log.w("RABARBARAS", "Failed to read value.", error.toException());
+            }
+        });
+    }
+
+    public void addSyncedData(final DataSnapshot dataSnapshot, final String FriendEmail) {
+
+        // Load data on background
+        class LoadContact extends AsyncTask<Void, Void, Void> {
+
+            @Override
+            protected void onPreExecute() {
+                super.onPreExecute();
+
+            }
+
+            @Override
+            protected Void doInBackground(Void... voids) {
+                GenericTypeIndicator<ArrayList<DataForSyncingModel>> t =
+                        new GenericTypeIndicator<ArrayList<DataForSyncingModel>>() {
+                        };
+                ArrayList<DataForSyncingModel> value = dataSnapshot.getValue(t);
+                if (value != null) {
+                    ArrayList<ClassNote> list = new ArrayList<>();
+                    ArrayList<IGenericItem> synced = db.getSyncedData();
+                    for (DataForSyncingModel syncedNote : value) {
+                        if (syncedNote != null) {
+                            list.add(initializeClassNote(syncedNote, FriendEmail));
+                        }
+                    }
+                    Iterator<ClassNote> iter = list.iterator();
+                    while (iter.hasNext()) {
+                        ClassNote c = iter.next();
+
+                        for (IGenericItem n : synced) {
+                            if (n instanceof ClassNote) {
+                                if (isEqualNote(c, n) || c.getCategory().equals("Personal ")) {
+                                    iter.remove();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    db.insertToSyncedTable(list);
+                    activity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            activity.refreshList();
+                        }
+                    });
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Void aVoid) {
+                super.onPostExecute(aVoid);
+                if (progressLayout != null) {
+                    progressLayout.setVisibility(View.GONE);
+                }
+            }
+        }
+        new LoadContact().execute();
+        // db.insertSyncedData(list,1);
+    }
+
+    public void addOutgoingCalls(final String email, final ArrayList<ContactEntity> contacts) {
         final DatabaseReference userRef = myRef.child("OutgoingCalls").child(email);
         boolean hasSyncedCall = PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean("OutgoingSynced", false);
-        if(!hasSyncedCall) {
+        if (!hasSyncedCall) {
             DatabaseReference rootRef = myRef.child("OutgoingCalls");
             db.deleteIncomingCalls();
             db.deleteOutgoingCalls();
@@ -119,7 +269,7 @@ public class FirebaseConnection {
 
                             }
                         });
-                    }else{
+                    } else {
                         Collections.reverse(contacts);
                         userRef.setValue(contacts);
                         db.insertOutgoingCalls(contacts);
@@ -136,7 +286,7 @@ public class FirebaseConnection {
         }
     }
 
-    public void addSyncEmail(final String email,final String input) {
+    public void addSyncEmail(final String email, final String input) {
 
         final DatabaseReference userRef = myRef.child("SyncList").child(email);
         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -156,39 +306,40 @@ public class FirebaseConnection {
         });
     }
 
-    public void deleteNote(String noteID){
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference();
+    public void deleteNote(String noteID) {
+        myRef = Utils.getDatabase().getReference();
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
-            String email = user.getEmail().replace(".",",");
+            String email = user.getEmail().replace(".", ",");
             DatabaseReference db_node = myRef.child("Notes").child(email).child(noteID);
             db_node.setValue(null);
         }
 
     }
 
-    public void deleteNode(String myEmail,String emailToDelete){
-        database = FirebaseDatabase.getInstance();
-        myRef = database.getReference();
+    public void deleteNode(String myEmail, String emailToDelete) {
+        myRef = Utils.getDatabase().getReference();
         DatabaseReference db_node = myRef.child("SyncList").child(myEmail).child(emailToDelete);
         db_node.setValue(null);
     }
 
     public void addDataToFirebase(String email) {
         DatabaseReference userRef = myRef.child("Notes").child(email);
-        ArrayList<ClassNote> l = db.getData();
+        ArrayList<IGenericItem> l = db.getData();
         ArrayList<DataForSyncingModel> list = new ArrayList<>();
-        for (ClassNote c : l) {
-            if (c.isSynced() == 0) {
-                list.add(new DataForSyncingModel(c.getCallDate(), c.getNotes(true), c.getPhoneNumber(),c.getCategory()));
+        for (IGenericItem c : l) {
+            if (c instanceof ClassNote) {
+                if (((ClassNote) c).isSynced() == 0) {
+                    list.add(new DataForSyncingModel(((ClassNote) c).getCallDate(), ((ClassNote) c).getNotes(true), ((ClassNote) c).getPhoneNumber(), ((ClassNote) c).getCategory()));
+                }
             }
         }
         if (!list.isEmpty()) {
             userRef.setValue(list);
         }
     }
-    public void addMyNotes(final String email){
+
+    public void addMyNotes(final String email) {
         DatabaseReference myNotesDb = myRef.child("Notes").child(email);
         myNotesDb.addValueEventListener(new ValueEventListener() {
 
@@ -200,7 +351,7 @@ public class FirebaseConnection {
                 ArrayList<DataForSyncingModel> value = dataSnapshot.getValue(t);
                 if (value != null) {
                     ArrayList<ClassNote> list = new ArrayList<>();
-                    ArrayList<ClassNote> allNotes = db.getData();
+                    ArrayList<IGenericItem> allNotes = db.getData();
                     for (DataForSyncingModel note : value) {
                         list.add(initializeClassNote(note, ""));
                     }
@@ -208,10 +359,12 @@ public class FirebaseConnection {
                     while (iter.hasNext()) {
                         ClassNote c = iter.next();
 
-                        for (ClassNote n : allNotes) {
-                            if (isEqualNote(c, n)) {
-                                iter.remove();
-                                break;
+                        for (IGenericItem n : allNotes) {
+                            if (n instanceof ClassNote) {
+                                if (isEqualNote(c, n)) {
+                                    iter.remove();
+                                    break;
+                                }
                             }
                         }
                     }
@@ -231,14 +384,14 @@ public class FirebaseConnection {
     private ClassNote initializeClassNote(DataForSyncingModel syncedNote, String friendEmail) {
         ClassNote note = new ClassNote();
         note.setNotes(syncedNote.getNotes());
-        note.setName(getContactName(context,syncedNote.getPhoneNumber()));
+        note.setName(getContactName(context, syncedNote.getPhoneNumber()));
         note.setCallDate(syncedNote.getCallDate());
-        note.setPhoneNumber(syncedNote.getPhoneNumber());
+        note.setPhoneNumber(Utils.fixNumber(syncedNote.getPhoneNumber()));
         note.setSynced(0);
         note.setReminder("");
-        if(syncedNote.getCategory() == null || syncedNote.getCategory().equals("null")){
+        if (syncedNote.getCategory() == null || syncedNote.getCategory().equals("null")) {
             note.setCategory("");
-        }else {
+        } else {
             note.setCategory(syncedNote.getCategory());
         }
         int catchCall = 1;
@@ -250,13 +403,14 @@ public class FirebaseConnection {
         return note;
     }
 
-    private boolean isEqualNote(ClassNote c, ClassNote n) {
-        return c.getNotes(true).equals(n.getNotes(true))
-                && c.getPhoneNumber().equals(n.getPhoneNumber())
-                && c.getCallDate().equals(n.getCallDate());
+    private boolean isEqualNote(IGenericItem c, IGenericItem n) {
+
+        return ((ClassNote) c).getNotes(true).equals(((ClassNote) n).getNotes(true))
+                && ((ClassNote) c).getPhoneNumber().equals(((ClassNote) n).getPhoneNumber())
+                && ((ClassNote) c).getCallDate().equals(((ClassNote) n).getCallDate());
     }
 
-    public void addMyEmail(final String userId,final String email){
+    public void addMyEmail(final String userId, final String email) {
         DatabaseReference ref = myRef.child("Emails");
         ref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override

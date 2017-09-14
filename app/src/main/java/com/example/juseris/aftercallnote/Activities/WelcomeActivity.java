@@ -3,6 +3,7 @@ package com.example.juseris.aftercallnote.Activities;
 /**
  * Created by juseris on 4/20/2017.
  */
+
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
@@ -25,6 +26,8 @@ import android.widget.TextView;
 import com.example.juseris.aftercallnote.FlyingButton;
 import com.example.juseris.aftercallnote.R;
 
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
+
 public class WelcomeActivity extends AppCompatActivity {
 
     private ViewPager viewPager;
@@ -33,6 +36,11 @@ public class WelcomeActivity extends AppCompatActivity {
     private TextView[] dots;
     private int[] layouts;
     private Button btnSkip, btnNext;
+
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -14,6 +14,10 @@
     <color name="white2">#f7f7f7f7</color>
     <color name="reminderIcon">#58a7c8</color>
     <color name="grey">#d7d7d7</color>
+    <color name="lightGrey">#e5c9c9c9</color>
+    <color name="personal">#09b740</color>
+    <color name="vipContact">#ff01ff</color>
+    <color name="important">#ff0101</color>
 
     <!-- Screens background color-->
     <color name="bg_screen1">#24b6cc</color>

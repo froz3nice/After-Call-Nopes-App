@@ -19,14 +19,15 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
-import com.example.juseris.aftercallnote.Models.ClassSettings;
 import com.example.juseris.aftercallnote.R;
 
 import java.util.ArrayList;
 
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
+
 public class SettingsActivity extends AppCompatActivity {
     private MyCustomAdapter dataAdapter = null;
-    private ClassSettings Settings;
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -39,13 +40,17 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.select_week_days);
-        final CheckBox showAddNote = (CheckBox) findViewById(R.id.showAddNoteCheckbox);
+        final CheckBox showPurplePlus = (CheckBox) findViewById(R.id.showAddNoteCheckbox);
         final CheckBox incoming = (CheckBox) findViewById(R.id.incomingCheckBox);
         final CheckBox outgoing = (CheckBox) findViewById(R.id.outgoingCheckBox);
-        Settings = new ClassSettings(getApplicationContext());
 
         incoming.setChecked(PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                 .getBoolean("incomingCheckBox", true));
@@ -84,7 +89,7 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
-        showAddNote.setOnClickListener(new View.OnClickListener() {
+        showPurplePlus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -94,8 +99,7 @@ public class SettingsActivity extends AppCompatActivity {
                         startActivityForResult(intent, 1234);
                     }
                 }
-                Settings.setCatchCall(showAddNote.isChecked());
-                if (showAddNote.isChecked()) {
+                if (showPurplePlus.isChecked()) {
                     PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                             .edit().putBoolean("purpleBox", true).apply();
                 } else {
@@ -105,7 +109,8 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
 
-        showAddNote.setChecked(Settings.getCatchCall());
+        showPurplePlus.setChecked(PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                .getBoolean("purpleBox", false));
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar3);
         setSupportActionBar(toolbar);
         ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();

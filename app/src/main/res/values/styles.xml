@@ -11,7 +11,9 @@
         <item name="android:windowAnimationStyle">@null</item>
         <item name="android:checkboxStyle">@style/customCheckBoxStyle</item>
         <item name="android:popupMenuStyle">@style/PopupMenu</item>
+
     </style>
+
 
     <style name="Theme.AppCompat.Translucent">
         <item name="android:windowNoTitle">true</item>
@@ -30,12 +32,26 @@
         <item name="colorPrimary">@color/white</item>
     </style>
 
+    <style name="appCompatStyle" parent="Theme.AppCompat.Light">
+        <item name="colorControlNormal">@color/colorPrimary</item>
+        <item name="colorControlActivated">@color/colorAccent</item>
+        <item name="android:editTextStyle">@style/editTextStyle</item>
+    </style>
+
+
     <style name="customCheckBoxStyle" parent="@android:style/Widget.CompoundButton.CheckBox">
         <item name="android:button">@drawable/checkbox_selector</item>
     </style>
 
     <style name="navigationStyle">
         <item name="android:textSize">15sp</item>
+    </style>
+
+    <style name="editTextStyle" parent="@android:style/Widget.EditText">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:textColor">#6e6e6e</item>
+        <item name="android:textSize">17sp</item>
     </style>
 
     <style name="MyAlertDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">

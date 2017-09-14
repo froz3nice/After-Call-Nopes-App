@@ -12,43 +12,37 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ShapeDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
+import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.AppCompatCheckBox;
-import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.Toolbar;
-import android.text.Spannable;
-import android.text.SpannableStringBuilder;
-import android.text.format.DateFormat;
-import android.text.style.ForegroundColorSpan;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ScrollView;
-import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -56,28 +50,32 @@ import android.widget.Toast;
 import com.example.juseris.aftercallnote.Adapters.CustomListAdapterDialog;
 import com.example.juseris.aftercallnote.FirebaseConnection;
 import com.example.juseris.aftercallnote.FlyingButton;
-import com.example.juseris.aftercallnote.Models.ClassSettings;
+import com.example.juseris.aftercallnote.KeyboardUtil;
+import com.example.juseris.aftercallnote.Models.CategoriesAndColors;
 import com.example.juseris.aftercallnote.Database;
-import com.example.juseris.aftercallnote.Models.ContactsEntity;
 import com.example.juseris.aftercallnote.R;
+import com.example.juseris.aftercallnote.Utils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.prolificinteractive.materialcalendarview.CalendarDay;
+import com.prolificinteractive.materialcalendarview.CalendarMode;
+import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
+import com.prolificinteractive.materialcalendarview.OnDateSelectedListener;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class ActivityPopupAfter extends AppCompatActivity {
     private Context context;
     private EditText textNote;
     private String name = "";
     private Database database = null;
-    private ClassSettings Settings = null;
     private final Integer catchCall = 1;
     private NotificationManager manager;
     private String number = "";
@@ -86,11 +84,23 @@ public class ActivityPopupAfter extends AppCompatActivity {
     private long eventID = 0;
     private long time = 0;
     private String category = "";
+    private TextView tw_category;
+    private TextView tw_reminder;
     private Dialog dialog;
     CheckBox box;
     private SharedPreferences prefs;
+    private TextView name_number;
+    private TextView add_edit_note;
+    private int minute;
+    private int hour;
+
 
     // private Spinner spinner;
+    @Override
+    protected void attachBaseContext(Context newBase) {
+        super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
+    }
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,15 +110,22 @@ public class ActivityPopupAfter extends AppCompatActivity {
                         WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED |
                         WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
         );
+
         setContentView(R.layout.activity_popup_after);
         context = getApplicationContext();
+        final View viewGroup = findViewById(R.id.rootView);
+        KeyboardUtil keyboardUtil = new KeyboardUtil(this, viewGroup);
+        keyboardUtil.enable();
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
         database = new Database(context);
-        Settings = new ClassSettings(context);
         textNote = (EditText) findViewById(R.id.ac_note);
-        Button buttonAdd = (Button) findViewById(R.id.ac_addNote);
+        tw_category = (TextView) findViewById(R.id.category);
+        tw_reminder = (TextView) findViewById(R.id.reminder);
 
-        if(isMyServiceRunning(FlyingButton.class)) {
+
+        Button buttonAdd = (Button) findViewById(R.id.ac_addNote);
+        buttonAdd.bringToFront();
+        if (isMyServiceRunning(FlyingButton.class)) {
             context.stopService(new Intent(context, FlyingButton.class));
         }
         //Typeface custom_font = Typeface.createFromAsset(context.getAssets(), "fonts/hover.ttf");
@@ -119,6 +136,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
         //textNote.getBackground().setColorFilter(Color.GRAY, PorterDuff.Mode.SRC_IN);
         manager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
 
+        add_edit_note = (TextView) findViewById(R.id.add_edit_note);
         Toolbar toolbar = (Toolbar) findViewById(R.id.afterToolBar);
         setSupportActionBar(toolbar);
         ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
@@ -127,130 +145,80 @@ public class ActivityPopupAfter extends AppCompatActivity {
                 .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
         toolbar.setLayoutParams(layoutParams);
         box = (CheckBox) findViewById(R.id.toolbarCheckBox);
+        name_number = (TextView) findViewById(R.id.name_number);
         box.setVisibility(View.VISIBLE);
-        View categoryLayout = findViewById(R.id.categoryLayout);
-        View calendarLayout = findViewById(R.id.calendarLayout);
+        // View categoryLayout = findViewById(R.id.categoryLayout);
+        //View calendarLayout = findViewById(R.id.calendarLayout);
         dialog = new Dialog(this);
         dialog.setTitle("Select category");
-        categoryLayout.setOnClickListener(new View.OnClickListener() {
+       /* categoryLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showCategoryPopup();
+
             }
         });
+
 
         calendarLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                showCalendar();
             }
         });
-        setTitle("");
+        showCategoryPopup();
+        showCalendar();*/
 
-        final String nrs = prefs
-                .getString("NUMBERS", "");
+        final String nrs = prefs.getString("NUMBERS", "");
         if (getIntent().getStringExtra("PhoneNumber") == null) {
-            number = prefs
-                    .getString("LastActiveNr", "");
+            number = prefs.getString("LastActiveNr", "");
             createNotification();
         } else {
-            number = fixNumber(getIntent().getStringExtra("PhoneNumber"));
+            number = Utils.fixNumber(getIntent().getStringExtra("PhoneNumber"));
         }
 
-        if(number == null){
-            box.setText("Please make a call");
-        }else {
-            if(number != null && !number.equals("")) {
+        if (number != null) {
+            if (number != null && !number.equals("")) {
                 name = getContactName(context, number);
             }
         }
-
-        if(getIntent().getStringExtra("Note") != null) {
-            textNote.setText(getIntent().getStringExtra("Note"));
-            textNote.setSelection(textNote.getText().length());
-            if (name.equals("")) {
-                box.setText("Edit note for " + number);
-            } else {
-                box.setText("Edit note for " + name);
-            }
-        }else {
-            if (name.equals("")) {
-                box.setText("Add note for " + number);
-            } else {
-                box.setText("Add note for " + name);
-            }
+        setTitle("");
+        if (getIntent().getStringExtra("category") != null) {
+            category = getIntent().getStringExtra("category");
         }
-        box.setChecked(prefs
-                .getBoolean(number, true));
-        box.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (box.isChecked()) {
-                    database.updateCatchCall(number, 1);
-                    prefs
-                            .edit().putBoolean(number, true).apply();
-                } else {
-                    AlertDialog dialog = alertDialog();
-                    dialog.show();
-                    double width = getResources().getDisplayMetrics().widthPixels * 0.95;
-                    dialog.getWindow().setLayout((int)width, WindowManager.LayoutParams.WRAP_CONTENT);
-                }
-            }
-        });
-
         buttonAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(getIntent().getStringExtra("Note") != null){
-                    String input = textNote.getText().toString();
-                    database.Update_Note(getIntent().getIntExtra("ID",0), input,reminder,category);
-                    ((InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE))
-                            .hideSoftInputFromWindow(textNote.getWindowToken(), 0);
-                    Intent returnIntent = new Intent();
-                    setResult(AppCompatActivity.RESULT_OK, returnIntent);
-                    if (time > 1000) {
-                        setReminder((int) time / 60000,textNote.getText().toString());
+                //edit note
+                if (getIntent().getStringExtra("Note") != null) {
+                    if (!textNote.getText().toString().isEmpty()) {
+                        String input = textNote.getText().toString();
+                        if (getIntent().getIntExtra("isSynced", 0) == 0) {
+                            database.updateNote(getIntent().getIntExtra("ID", 0), input, reminder, category);
+                        } else {
+                            database.updateSyncedNote(getIntent().getIntExtra("ID", 0), input, reminder, category);
+                        }
 
-                    }
-                    finish();
-                }else {
-                    if(textNote.getText().toString().isEmpty()){
+                        ((InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE))
+                                .hideSoftInputFromWindow(textNote.getWindowToken(), 0);
+                        Intent returnIntent = new Intent();
+                        setResult(AppCompatActivity.RESULT_OK, returnIntent);
+                        if (time > 1000) {
+                            setReminder((int) time / 60000, textNote.getText().toString());
+                        }
+                        finish();
+                    } else {
                         Toast.makeText(context, "Please add note to save", Toast.LENGTH_SHORT).show();
-                    }else {
+                    }
+                } else {
+                    //add note
+                    if (textNote.getText().toString().isEmpty()) {
+                        Toast.makeText(context, "Please add note to save", Toast.LENGTH_SHORT).show();
+                    } else {
                         if (!number.equals("")) {
-                            String[] timeArray = Settings.getCallTime().split(";");
-                            String[] numbers = nrs.split(";");
-                            String nums = "";
-                            String t = "";
-                            for (int i = 0; i < numbers.length; i++) {
-                                if (i != numbers.length - 1) {
-                                    if (i == 0) {
-                                        nums += numbers[i];
-                                        t += timeArray[i];
-                                    } else {
-                                        nums += ";" + numbers[i];
-                                        t += ";" + timeArray[i];
-                                    }
-                                }
-                            }
-                            Log.d("name", nums);
-                            Log.d("time", t);
-                            Settings.setCallTime(t);
-                            prefs
-                                    .edit().putString("NUMBERS", nums).apply();
-
-                            //Settings.setNumbers(nums);
-                            if (nums.equals("")) {
-
-                                manager.cancel(notificationID);
-                                //prefs
-                                //   .edit().putString("LastActiveNr","").apply();
-                            }
-
-                            database.Insert_Note(
+                            String callTime = PreferenceManager.getDefaultSharedPreferences(context).getString("callTime", "");
+                            database.insertNote(
                                     number,
                                     textNote.getText().toString(),
-                                    timeArray[timeArray.length - 1], name, catchCall, reminder, category);
+                                    callTime, name, catchCall, reminder, category);
                             FirebaseConnection con = new FirebaseConnection(context);
                             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                             String email = "";
@@ -258,25 +226,24 @@ public class ActivityPopupAfter extends AppCompatActivity {
                                 email = user.getEmail();
                                 String fixedEmail = email.replace(".", ",");
                                 con.addDataToFirebase(fixedEmail);
-                                String syncOccured = prefs
-                                        .getString("SyncOccured", "");
+                                String syncOccured = prefs.getString("SyncOccured", "");
                                 if (syncOccured.equals("")) {
                                     con.addMyNotes(fixedEmail);
                                 }
                             }
                             database.createOrUpdateStatistics(number, 0, 0, 1, 0, 0, 0);
-                            Settings.setName(name);
                             Intent returnIntent = new Intent();
                             setResult(AppCompatActivity.RESULT_OK, returnIntent);
                             if (time > 1000) {
                                 setReminder((int) time / 60000, textNote.getText().toString());
                             }
                             finish();
-                            if(MainActivity.active){
-                                Intent i = new Intent(ActivityPopupAfter.this,MainActivity.class);
+                            if (MainActivity.active) {
+                                Intent i = new Intent(ActivityPopupAfter.this, MainActivity.class);
                                 startActivity(i);
                             }
-                        }else{
+                            manager.cancel(notificationID);
+                        } else {
                             Toast.makeText(context, "Please choose a contact", Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -290,11 +257,35 @@ public class ActivityPopupAfter extends AppCompatActivity {
             public void run() {
                 finish();
             }
-        }, 1000 * 60*5);
+        }, 1000 * 60 * 5);
     }
 
-    private AlertDialog alertDialog()
-    {
+    private void setCategoryColor(int color, String title) {
+        Drawable background = tw_category.getBackground();
+        try {
+            if (background instanceof ShapeDrawable) {
+                ((ShapeDrawable) background).getPaint().setColor(ContextCompat.getColor(context, color));
+            } else if (background instanceof GradientDrawable) {
+                ((GradientDrawable) background).setColor(ContextCompat.getColor(context, color));
+            } else if (background instanceof ColorDrawable) {
+                ((ColorDrawable) background).setColor(ContextCompat.getColor(context, color));
+            }
+        } catch (Exception e) {
+            String hexColor = String.format("#%06X", (0xFFFFFF & color));
+            if (background instanceof ShapeDrawable) {
+                ((ShapeDrawable) background).getPaint().setColor(Color.parseColor(String.valueOf(hexColor)));
+            } else if (background instanceof GradientDrawable) {
+                ((GradientDrawable) background).setColor(Color.parseColor(String.valueOf(hexColor)));
+            } else if (background instanceof ColorDrawable) {
+                ((ColorDrawable) background).setColor(Color.parseColor(String.valueOf(hexColor)));
+            }
+        }
+        tw_category.setText(title);
+        tw_category.setVisibility(View.VISIBLE);
+    }
+
+
+    private AlertDialog alertDialog() {
         return new AlertDialog.Builder(this)
                 //set message, title, and icon
                 .setMessage("AfterCallNotes will not show and ask Notes for this contact anymore.\n\nYou can change this in current contact page.")
@@ -302,9 +293,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
 
                     public void onClick(DialogInterface dialog, int whichButton) {
                         //your deleting code
-                        database.updateCatchCall(number, 0);
-                        prefs
-                                .edit().putBoolean(number, false).apply();
+                        prefs.edit().putBoolean(number, false).apply();
                         dialog.dismiss();
                         box.setChecked(prefs.getBoolean(number, true));
                     }
@@ -331,138 +320,104 @@ public class ActivityPopupAfter extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-         if(!prefs.getString("ChosenNumber", "").equals("")) {
-             number = fixNumber(prefs
-                     .getString("ChosenNumber", ""));
-             box.setChecked(prefs
-                     .getBoolean(number, true));
-             name = getContactName(context, number);
-             if (name.equals("")) {
-                 box.setText("Add note for " + number);
-             } else {
-                 box.setText("Add note for " + name);
-             }
-             prefs
-                     .edit().putString("ChosenNumber", "").apply();
-         }
+        if (!prefs.getString("ChosenNumber", "").equals("")) {
+            number = Utils.fixNumber(prefs.getString("ChosenNumber", ""));
+            box.setChecked(prefs
+                    .getBoolean(number, true));
+            name = getContactName(context, number);
+            if (name.equals("")) {
+                name_number.setText(number);
+            } else {
+                name_number.setText(name);
+            }
+            prefs.edit().putString("ChosenNumber", "").apply();
+        }
 
-        if(prefs
-                .getBoolean("haveToChooseContact", false)){
-            TextView tw = (TextView)findViewById(R.id.nameOrNumber);
+        if (prefs.getBoolean("haveToChooseContact", false)) {
+            TextView tw = (TextView) findViewById(R.id.choose_contact);
             tw.setVisibility(View.VISIBLE);
             box.setVisibility(View.GONE);
+            name_number.setVisibility(View.GONE);
             number = "";
-        }else{
-            TextView tw = (TextView)findViewById(R.id.nameOrNumber);
+        } else {
+            TextView tw = (TextView) findViewById(R.id.choose_contact);
             tw.setVisibility(View.GONE);
             box.setVisibility(View.VISIBLE);
+            name_number.setVisibility(View.VISIBLE);
         }
-    }
 
-    private void showCategoryPopup() {
-        final ArrayList<String> titles = new ArrayList<>();
-        titles.add("No category");
-        titles.add("Personal (will not sync)");
-        titles.add("Important");
-        titles.add("Vip contact");
-        View v = getLayoutInflater().inflate(R.layout.dialog_main, null);
-        WindowManager.LayoutParams params = getWindow().getAttributes();
-        params.width = WindowManager.LayoutParams.MATCH_PARENT;
-        //getWindow().setAttributes(params);
-        v.setLayoutParams(params);
-        ListView lv = (ListView) v.findViewById(R.id.custom_list);
-        CustomListAdapterDialog clad = new CustomListAdapterDialog(ActivityPopupAfter.this, titles);
-        lv.setAdapter(clad);
-        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                TextView tw = (TextView)findViewById(R.id.categoryText);
-                switch(position){
-                    case 0:
-                        tw.setTextColor(Color.parseColor("#808080"));
-                        tw.setText("Category");
-                        break;
-                    case 1:
-                        category="Personal";
-                        tw.setTextColor(Color.rgb(53, 173, 63));
-                        tw.setText(category);
-                        break;
-                    case 2:
-                        category = "Important";
-                        tw.setTextColor(Color.RED);
-                        tw.setText(category);
-                        break;
-                    case 3:
-                        category = "Vip contact";
-                        tw.setTextColor(Color.MAGENTA);
-                        tw.setText(category);
-                        break;
+        if (getIntent().getStringExtra("Note") != null) {
+            if (getIntent().getStringExtra("category") != null) {
+                String cat = getIntent().getStringExtra("category");
+                tw_category.setVisibility(View.VISIBLE);
+                if (cat.length() > 1) {
+                    switch (cat) {
+                        case "":
+                            tw_category.setVisibility(View.GONE);
+                            break;
+                        case "Personal ":
+                            setCategoryColor(R.color.personal, "PERSONAL");
+                            category = cat.substring(0, cat.length() - 1);
+                            break;
+                        case "Important ":
+                            setCategoryColor(R.color.important, "IMPORTANT");
+                            category = cat.substring(0, cat.length() - 1);
+                            break;
+                        default:
+                            int a = 0;
+                            int colorIndex = 0;
+                            category = cat;
+                            setCategoryColor(Color.BLUE, cat.substring(0, cat.length() - 1));
+                            break;
+                    }
+
+
+                } else {
+                    tw_category.setVisibility(View.GONE);
                 }
-                dialog.dismiss();
+            } else {
+                tw_category.setVisibility(View.GONE);
+            }
+            textNote.setText(getIntent().getStringExtra("Note"));
+            textNote.setSelection(textNote.getText().length());
+            if (name.equals("")) {
+                name_number.setText(number);
+            } else {
+                name_number.setText(name);
+            }
+
+            add_edit_note.setText("Edit Note");
+
+        } else {
+            if (name.equals("")) {
+                name_number.setText(number);
+            } else {
+                name_number.setText(name);
+            }
+            add_edit_note.setText("Add Note");
+        }
+        box.setChecked(prefs.getBoolean(number, true));
+        box.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (box.isChecked()) {
+                    prefs.edit().putBoolean(number, true).apply();
+                } else {
+                    AlertDialog dialog = alertDialog();
+                    dialog.show();
+                    double width = getResources().getDisplayMetrics().widthPixels * 0.95;
+                    dialog.getWindow().setLayout((int) width, WindowManager.LayoutParams.WRAP_CONTENT);
+                }
             }
         });
-
-        dialog.setContentView(v);
-        double width = getResources().getDisplayMetrics().widthPixels * 0.95;
-        dialog.getWindow().setLayout((int)width, WindowManager.LayoutParams.WRAP_CONTENT);
-
-        dialog.show();
     }
+
     TimePicker timePicker;
-    private void showCalendar() {
-        final View dialogView = View.inflate(ActivityPopupAfter.this, R.layout.date_time_picker, null);
-        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(ActivityPopupAfter.this, R.style.MyAlertDialogStyle);
-        timePicker = (TimePicker) dialogView.findViewById(R.id.time_picker);
-        timePicker.setIs24HourView(true);
-        ScrollView sv = (ScrollView) dialogView.findViewById(R.id.scrollView);
-        sv.smoothScrollTo(0, 0);
-        alertDialog.setPositiveButton("Save", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                DatePicker datePicker = (DatePicker) dialogView.findViewById(R.id.date_picker);
+    CalendarDay chosenDate = CalendarDay.today();
 
-                datePicker.setBackgroundColor(Color.CYAN);
-                Calendar dateTime;
-                if (Build.VERSION.SDK_INT < 23) {
-                    dateTime = new GregorianCalendar(datePicker.getYear(),
-                            datePicker.getMonth(),
-                            datePicker.getDayOfMonth(),
-                            timePicker.getCurrentHour(),
-                            timePicker.getCurrentMinute());
-                } else {
-                    dateTime = new GregorianCalendar(datePicker.getYear(),
-                            datePicker.getMonth(),
-                            datePicker.getDayOfMonth(),
-                            timePicker.getHour(),
-                            timePicker.getMinute());
-                }
-
-                SimpleDateFormat df = new SimpleDateFormat("yyyy MMM dd HH:mm",Locale.ENGLISH);
-
-                time = dateTime.getTimeInMillis() - System.currentTimeMillis();
-                if (time > 1000) {
-                    reminder = String.format("%s", df.format(dateTime.getTime()));
-                    TextView tw = (TextView) findViewById(R.id.calendarText);
-                    tw.setText(reminder);
-                } else {
-                    Toast.makeText(context, "You can't set date to past", Toast.LENGTH_SHORT).show();
-                }
-
-            }
-        });
-        alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                reminder = "";
-            }
-        });
-        alertDialog.setView(dialogView);
-        alertDialog.create().show();
-    }
-
-    public void createNotification(){
+    public void createNotification() {
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.mipmap.ic_plius)
                 .setContentTitle("Don't forget to add notes")
                 .setContentText("Add note for last called");
 
@@ -482,7 +437,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
         manager.notify(mNotificationId, mBuilder.build());
     }
 
-    public void setReminder(int i,String note) {
+    public void setReminder(int i, String note) {
         if (Build.VERSION.SDK_INT >= 14) {
             //finish();
             Toast.makeText(context, "Reminder saved", Toast.LENGTH_SHORT).show();
@@ -492,9 +447,9 @@ public class ActivityPopupAfter extends AppCompatActivity {
             ContentValues event = new ContentValues();
             event.put("calendar_id", 1);
             if (name == null) {
-                event.put("title", "Your note for " + number + " : "+note);
+                event.put("title", "Your note for " + number + " : " + note);
             } else {
-                event.put("title", "Your note for " + name + " : "+note);
+                event.put("title", "Your note for " + name + " : " + note);
             }
             event.put("eventTimezone", TimeZone.getDefault().getID());
             event.put("dtstart", startDate);
@@ -524,11 +479,12 @@ public class ActivityPopupAfter extends AppCompatActivity {
             context.getApplicationContext().getContentResolver()
                     .insert(Uri.parse(reminderUriString), reminders);
 
-            database.createOrUpdateStatistics(fixNumber(number), 0, 0, 0, 1, 0, 0);
+            database.createOrUpdateStatistics(Utils.fixNumber(number), 0, 0, 0, 1, 0, 0);
         } else {
             Toast.makeText(context, "Cannot add reminder, android version too low", Toast.LENGTH_SHORT).show();
         }
     }
+
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -546,7 +502,6 @@ public class ActivityPopupAfter extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.close_notes, menu);
         return true;
     }
-
 /*
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -565,31 +520,6 @@ public class ActivityPopupAfter extends AppCompatActivity {
                 return super.onOptionsItemSelected(item);
         }
     }*/
-
-
-    private String fixNumber(String number) {
-        String Number = ""; //= number;
-        if (number.length() < 2) return "";
-        try {
-            Number = number.replaceAll("[ ()#~!-]", "");
-            String FirstNumbers = Number.substring(0, 2);
-            if (FirstNumbers.equalsIgnoreCase("86")) {
-                Number = "+3706" + Number.substring(2, Number.length());
-            }
-            if (FirstNumbers.equalsIgnoreCase("85")) {
-                Number = "+3705" + Number.substring(2, Number.length());
-            }
-            if (FirstNumbers.equalsIgnoreCase("83")) {
-                Number = "+3703" + Number.substring(2, Number.length());
-            }
-        } catch (Exception ex) {
-            Toast.makeText(context,
-                    String.valueOf(Number) + "`" + ex.toString() + "`" + String.valueOf(number),
-                    Toast.LENGTH_LONG).show();
-        }
-
-        return Number;
-    }
 
     public String getContactName(Context context, String phoneNumber) {
         ContentResolver cr = context.getContentResolver();
@@ -621,8 +551,204 @@ public class ActivityPopupAfter extends AppCompatActivity {
     }
 
     public void chooseContact(View view) {
-        Intent i = new Intent(ActivityPopupAfter.this,AllCallsActivity.class);
+        Intent i = new Intent(ActivityPopupAfter.this, AllCallsActivity.class);
         startActivity(i);
+    }
+
+    int color = Color.BLUE;
+
+    private ArrayList<String> createTitles() {
+        ArrayList<CategoriesAndColors> cats = database.getCatsAndColors();
+        final ArrayList<String> titles = new ArrayList<>();
+
+        titles.add("No category");
+        titles.add("PERSONAL (will not sync)");
+        titles.add("IMPORTANT");
+        for (CategoriesAndColors cat : cats) {
+            titles.add(cat.getCategory());
+        }
+        titles.add("+ add new category");
+        return titles;
+    }
+
+    public void showCategoryPopup(View view) {
+        if (getIntent().getIntExtra("isSynced", 0) == 0) {
+            final ArrayList<String> titles = createTitles();
+            View v = getLayoutInflater().inflate(R.layout.dialog_main, null);
+            WindowManager.LayoutParams params = getWindow().getAttributes();
+            params.width = WindowManager.LayoutParams.MATCH_PARENT;
+            //getWindow().setAttributes(params);
+            v.setLayoutParams(params);
+            ListView lv = (ListView) v.findViewById(R.id.custom_list);
+            CustomListAdapterDialog clad = new CustomListAdapterDialog(ActivityPopupAfter.this, titles);
+            lv.setAdapter(clad);
+            lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    // TextView tw = (TextView)findViewById(R.id.categoryText);
+                    if (position == 0) {
+                        tw_category.setVisibility(View.GONE);
+                        category = "";
+                    } else if (position == 1) {
+                        category = "Personal";
+                        setCategoryColor(R.color.personal, "PERSONAL");
+                    } else if (position == 2) {
+                        category = "Important";
+                        setCategoryColor(R.color.important, "IMPORTANT");
+                    }
+                    for (int i = 3; i < titles.size() + 1; i++) {
+                        if (position == i) {
+                            if (i == titles.size() - 1) {
+                                View v = getLayoutInflater().inflate(R.layout.edittext_add_user, null);
+                                final EditText textInputNote = (EditText) v.findViewById(R.id.add_user);
+                                final AlertDialog.Builder dialog = new AlertDialog.Builder(ActivityPopupAfter.this);
+                                dialog.setTitle("Enter a new category");
+                                dialog.setView(textInputNote);
+                                textInputNote.setTextColor(Color.BLACK);
+                                textInputNote.setSelection(textInputNote.length());
+                           /* dialog.setNeutralButton("Choose color", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialogInterface, int i) {
+                                    ColorPickerDialogBuilder
+                                            .with(ActivityPopupAfter.this)
+                                            .setTitle("Choose color")
+                                            .initialColor(Color.BLUE)
+                                            .wheelType(ColorPickerView.WHEEL_TYPE.FLOWER)
+                                            .density(12)
+                                            .setPositiveButton("ok", new ColorPickerClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
+                                                    color = selectedColor;
+                                                }
+                                            })
+                                            .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                }
+                                            })
+                                            .build()
+                                            .show();
+                                }
+                            });*/
+                                dialog.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        final String input = textInputNote.getText().toString().toUpperCase();
+                                        database.insertCategoryAndColor(new CategoriesAndColors(input, String.valueOf(color)));
+                                    }
+                                });
+                                dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+
+                                    }
+                                });
+                                dialog.create().show();
+                                ((InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE))
+                                        .toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
+
+                            } else {
+                                ArrayList<CategoriesAndColors> cats = database.getCatsAndColors();
+                                int a = 3;
+                                for (CategoriesAndColors cat : cats) {
+                                    if (a == i) {
+                                        category = cat.getCategory();
+                                        setCategoryColor(Integer.parseInt(cat.getColor()), category);
+                                    }
+                                    a++;
+                                }
+                            }
+                        }
+                    }
+
+                    dialog.dismiss();
+                }
+            });
+
+            dialog.setContentView(v);
+            double width = getResources().getDisplayMetrics().widthPixels * 0.95;
+            dialog.getWindow().setLayout((int) width, WindowManager.LayoutParams.WRAP_CONTENT);
+
+            dialog.show();
+        } else {
+            Toast.makeText(context, "Sorry, you can't change the category of synced note", Toast.LENGTH_LONG).show();
+        }
+    }
+
+    public void showCalendar(View view) {
+
+        final View dialogView = View.inflate(ActivityPopupAfter.this, R.layout.date_time_picker, null);
+        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(ActivityPopupAfter.this, R.style.MyAlertDialogStyle);
+
+        MaterialCalendarView mcv = (MaterialCalendarView) dialogView.findViewById(R.id.calendarView);
+        ;
+        mcv.state().edit()
+                .setFirstDayOfWeek(Calendar.WEDNESDAY)
+                .setMinimumDate(CalendarDay.from(
+                        Calendar.getInstance().get(Calendar.YEAR),
+                        Calendar.getInstance().get(Calendar.MONTH),
+                        Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
+                ))
+                .setCalendarDisplayMode(CalendarMode.MONTHS)
+                .commit();
+        mcv.setOnDateChangedListener(new OnDateSelectedListener() {
+            @Override
+            public void onDateSelected(@NonNull MaterialCalendarView widget, @NonNull CalendarDay date, boolean selected) {
+                chosenDate = date;
+            }
+        });
+
+        timePicker = (TimePicker) dialogView.findViewById(R.id.time_picker);
+        timePicker.setIs24HourView(true);
+
+        ScrollView sv = (ScrollView) dialogView.findViewById(R.id.scrollView);
+        sv.smoothScrollTo(0, 0);
+        alertDialog.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+
+                //datePicker.setBackgroundColor(Color.CYAN);
+                Calendar dateTime;
+                if (Build.VERSION.SDK_INT < 23) {
+                    dateTime = new GregorianCalendar(chosenDate.getYear(),
+                            chosenDate.getMonth(),
+                            chosenDate.getDay(),
+                            timePicker.getCurrentHour(),
+                            timePicker.getCurrentMinute());
+                } else {
+                    dateTime = new GregorianCalendar(chosenDate.getYear(),
+                            chosenDate.getMonth(),
+                            chosenDate.getDay(),
+                            timePicker.getHour(),
+                            timePicker.getMinute());
+                }
+
+                SimpleDateFormat df = new SimpleDateFormat("yyyy MMM dd HH:mm", Locale.ENGLISH);
+
+                time = dateTime.getTimeInMillis() - System.currentTimeMillis();
+                if (time > 1000) {
+                    reminder = String.format("%s", df.format(dateTime.getTime()));
+                    int imgSize = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 13
+                            , getResources().getDisplayMetrics());
+                    Drawable img = ResourcesCompat.getDrawable(getResources(), R.drawable.ic_reminder_icon, null);
+                    img.setBounds(0, 0, imgSize, imgSize);
+                    tw_reminder.setCompoundDrawables(img, null, null, null);
+                    tw_reminder.setText(reminder.substring(5, reminder.length()));
+                    tw_reminder.setVisibility(View.VISIBLE);
+                } else {
+                    Toast.makeText(context, "Sorry, you can't set date to past", Toast.LENGTH_SHORT).show();
+                }
+
+            }
+        });
+        alertDialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                reminder = "";
+            }
+        });
+        alertDialog.setView(dialogView);
+        alertDialog.create().show();
     }
 }
 

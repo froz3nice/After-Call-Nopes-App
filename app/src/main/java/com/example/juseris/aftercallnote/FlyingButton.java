@@ -33,6 +33,7 @@ public class FlyingButton extends Service {
     Context ctx;
     //private ImageView chatHead;
     private FloatingActionButton btn;
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -45,14 +46,14 @@ public class FlyingButton extends Service {
         ctx = this;
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         setTheme(R.style.AppTheme);
-        btn = (FloatingActionButton)LayoutInflater.from(this).inflate(R.layout.rotated_addnote_button, null);
+        btn = (FloatingActionButton) LayoutInflater.from(this).inflate(R.layout.rotated_addnote_button, null);
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.TYPE_PHONE,
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 PixelFormat.TRANSLUCENT);
-        params.gravity =  Gravity.END ;
+        params.gravity = Gravity.END;
         params.x = (int) TypedValue
                 .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16, getResources().getDisplayMetrics());
 
@@ -60,7 +61,7 @@ public class FlyingButton extends Service {
 
         try {
 
-            btn.setOnClickListener(new View.OnClickListener(){
+            btn.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     Intent popUpIntent = new Intent(ctx, ActivityPopupAfter.class);
@@ -78,7 +79,8 @@ public class FlyingButton extends Service {
                 private float initialTouchX;
                 private float initialTouchY;
 
-                @Override public boolean onTouch(View v, MotionEvent event) {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
 
@@ -111,8 +113,9 @@ public class FlyingButton extends Service {
         super.onDestroy();
         if (btn != null) windowManager.removeView(btn);
     }
+
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId){
+    public int onStartCommand(Intent intent, int flags, int startId) {
         // We want this service to continue running until it is explicitly
         // stopped, so return sticky.
         return START_STICKY;

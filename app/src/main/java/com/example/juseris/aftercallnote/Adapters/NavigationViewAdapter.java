@@ -20,6 +20,7 @@ public class NavigationViewAdapter extends BaseAdapter {
     class ViewHolder {
         TextView text1;
     }
+
     private LayoutInflater inflater;
     private ArrayList<String> objects;
 

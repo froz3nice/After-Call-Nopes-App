@@ -2,7 +2,9 @@ package com.example.juseris.aftercallnote.Adapters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.preference.PreferenceManager;
 import android.support.v7.view.ContextThemeWrapper;
 import android.support.v7.widget.PopupMenu;
 import android.text.Spannable;
@@ -24,6 +26,8 @@ import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.R;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by juseris on 3/17/2017.
@@ -66,21 +70,28 @@ public class CustomListAdapterDialog extends BaseAdapter {
             holder.title = (TextView) convertView.findViewById(R.id.textView12);
             final SpannableStringBuilder sb = new SpannableStringBuilder();
             sb.append(objects.get(position));
-            switch(position){
-                case 1:
-                    ForegroundColorSpan fcs = new ForegroundColorSpan(Color.rgb(53, 173, 63));
-                    sb.setSpan(fcs, 0, 8, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
-                    break;
-                case 2:
-                    holder.title.setTextColor(Color.RED);
-                    break;
-                case 3:
-                    holder.title.setTextColor(Color.MAGENTA);
-                    break;
-                default:
-                    holder.title.setTextColor(Color.parseColor("#808080"));
-                    break;
+            if (position == 0) {
+                holder.title.setTextColor(Color.parseColor("#808080"));
+            } else if (position == 1) {
+                ForegroundColorSpan fcs = new ForegroundColorSpan(Color.rgb(53, 173, 63));
+                sb.setSpan(fcs, 0, 8, Spannable.SPAN_INCLUSIVE_INCLUSIVE);
+            } else if (position == 2) {
+                holder.title.setTextColor(Color.RED);
+            } else if (position == objects.size() - 1) {
+                holder.title.setTextColor(Color.parseColor("#808080"));
+            } else {
+                SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+                Set<String> colors = prefs.getStringSet("colorsOfCats", new HashSet<String>());
+                holder.title.setTextColor(Color.BLUE);
             }
+           /* int a = 3;
+            for(String color : colors){
+                if(a == position) {
+                    holder.title.setTextColor(Integer.parseInt(color));
+                    break;
+                }
+                a++;
+            }*/
             holder.title.setText(sb);
             convertView.setTag(holder);
         }

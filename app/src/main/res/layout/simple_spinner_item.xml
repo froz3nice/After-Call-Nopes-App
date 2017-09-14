@@ -6,4 +6,4 @@
     android:ellipsize="marquee"
     android:gravity="center_vertical"
     android:textColor="#545252"
-    android:textSize="20sp"></TextView>
+    android:textSize="20sp" />
