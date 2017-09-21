@@ -28,7 +28,7 @@ public class ClassNote implements Parcelable,IGenericItem {
     private String name;
     private String lastName;
     private String callTime;
-    private String callDate;
+    private String dateString;
     private String email;
     private int catchCall;
     private String reminder;
@@ -99,7 +99,7 @@ public class ClassNote implements Parcelable,IGenericItem {
         DateFormat formatter = new SimpleDateFormat("MMMM dd HH:mm", Locale.US);
         Date date2 = new Date();
         try {
-            date2 = formatter.parse(getCallDate());
+            date2 = formatter.parse(getDateString());
         } catch (ParseException e) {
 
         }
@@ -133,13 +133,14 @@ public class ClassNote implements Parcelable,IGenericItem {
         return callTime;
     }
 
-    public void setCallDate(String callDate) {
-        this.callDate = callDate;
+    public void setDateString(String dateString) {
+        this.dateString = dateString;
     }
 
-    public String getCallDate() {
-        if (callDate == null || callDate.equalsIgnoreCase("null")) return "";
-        return callDate;
+    @Override
+    public String getDateString() {
+        if (dateString == null || dateString.equalsIgnoreCase("null")) return "";
+        return dateString;
     }
 
     public void setCatchCall(int catchCall) {
@@ -165,7 +166,7 @@ public class ClassNote implements Parcelable,IGenericItem {
             return String.format("%s,%s,%s,%s,%s",
                     getPhoneNumber(),
                     getName(),
-                    getCallDate(),
+                    getDateString(),
                     getNotes(false),
                     getCategory());
         }else{
@@ -173,7 +174,7 @@ public class ClassNote implements Parcelable,IGenericItem {
             return String.format("%s,%s,%s,%s,%s,%s",
                     getPhoneNumber(),
                     getName(),
-                    getCallDate(),
+                    getDateString(),
                     getNotes(false),
                     getCategory(),
                     "Synced note from "+fixedEmail);
@@ -186,7 +187,7 @@ public class ClassNote implements Parcelable,IGenericItem {
             return String.format("Phone number: %s\nname: %s\nDate: %s\nNote: %s\nCategory: %s\n",
                     getPhoneNumber(),
                     getName(),
-                    getCallDate(),
+                    getDateString(),
                     getNotes(false),
                     getCategory()
             );
@@ -195,7 +196,7 @@ public class ClassNote implements Parcelable,IGenericItem {
             return String.format("Phone number: %s\nname: %s\nDate: %s\nNote: %s\nCategory: %s\nSynced note with %s\n",
                     getPhoneNumber(),
                     getName(),
-                    getCallDate(),
+                    getDateString(),
                     getNotes(false),
                     getCategory(),
                     fixedEmail
@@ -209,7 +210,7 @@ public class ClassNote implements Parcelable,IGenericItem {
         name = in.readString();
         lastName = in.readString();
         callTime = in.readString();
-        callDate = in.readString();
+        dateString = in.readString();
         email = in.readString();
         id = in.readInt();
         catchCall = in.readInt();
@@ -245,7 +246,7 @@ public class ClassNote implements Parcelable,IGenericItem {
         dest.writeString(name);
         dest.writeString(lastName);
         dest.writeString(callTime);
-        dest.writeString(callDate);
+        dest.writeString(dateString);
         dest.writeString(email);
         dest.writeInt(id);
         dest.writeInt(catchCall);
@@ -266,6 +267,7 @@ public class ClassNote implements Parcelable,IGenericItem {
     public Date getDateObject() {
         return dateObject;
     }
+
 
     public void setDateObject(Date dateObject) {
         this.dateObject = dateObject;
@@ -295,7 +297,7 @@ public class ClassNote implements Parcelable,IGenericItem {
         String plainTitle;
         try {
             SimpleDateFormat sdf = new SimpleDateFormat(OLD_FORMAT, Locale.ENGLISH);
-            d = sdf.parse(getCallDate());
+            d = sdf.parse(getDateString());
             sdf.applyPattern(NEW_FORMAT);
             String newDateString = sdf.format(d);
             minAndSecTitle = newDateString + " , " + minutes + " min " + seconds + " s";
@@ -303,11 +305,11 @@ public class ClassNote implements Parcelable,IGenericItem {
             plainTitle = newDateString;
         } catch (ParseException e) {
             e.printStackTrace();
-            minAndSecTitle = getCallDate()
+            minAndSecTitle = getDateString()
                     + " , " + minutes + " min " + seconds + " s";
-            onlySecTitle = getCallDate()
+            onlySecTitle = getDateString()
                     + " , " + seconds + " s";
-            plainTitle = getCallDate();
+            plainTitle = getDateString();
         }
         if (minutes != 0) {
             return minAndSecTitle;

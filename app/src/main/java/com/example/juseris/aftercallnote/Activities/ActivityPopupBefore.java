@@ -26,14 +26,17 @@ import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.example.juseris.aftercallnote.Models.Order;
 import com.example.juseris.aftercallnote.R;
+import com.example.juseris.aftercallnote.Utils;
 
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
@@ -112,7 +115,7 @@ public class ActivityPopupBefore extends AppCompatActivity {
 
         IntentFilter filter = new IntentFilter();
 
-        filter.addAction("com.hello.action");
+        filter.addAction("com.braz.close");
         receiver = new BroadcastReceiver() {
 
             @Override
@@ -153,8 +156,9 @@ public class ActivityPopupBefore extends AppCompatActivity {
             name.setText(name1);
         }
         nr.setText(number);
-        sort();
+        noteList = Utils.getSortedList(noteList);
         ArrayList<IGenericItem> newItems = db.getNewPrestaByNr(number, number);
+        newItems = Utils.getSortedPrestaList(newItems);
         noteList.addAll(newItems);
         if (!newItems.isEmpty()) {
             name.setText(String.format("%s %s", ((Order) newItems.get(0)).getName(), ((Order) newItems.get(0)).getSurname()));
@@ -171,35 +175,5 @@ public class ActivityPopupBefore extends AppCompatActivity {
         mLayoutManager = new LinearLayoutManager(this);
         listViewNotes.setLayoutManager(mLayoutManager);
         listViewNotes.getRecycledViewPool().setMaxRecycledViews(0, 0);
-    }
-
-    public Date parseOrReturnNull(String date) {
-        try {
-            DateFormat formatter = new SimpleDateFormat("MMMM dd HH:mm", Locale.US);
-            return formatter.parse(date);
-        } catch (ParseException e) {
-            return null;
-        }
-    }
-
-    public void sort() {
-        Collections.sort(noteList, new Comparator<IGenericItem>() {
-            @Override
-            public int compare(IGenericItem b, IGenericItem a) {
-                Date date2 = parseOrReturnNull(((ClassNote) b).getCallDate());
-                Date date1 = parseOrReturnNull(((ClassNote) a).getCallDate());
-                if (date1 == null) {
-                    if (date2 == null) {
-                        return 0;
-                    }
-                    return 1;
-                }
-                if (date2 == null) {
-                    return -1;
-                }
-                return date2.compareTo(date1);
-            }
-        });
-        Collections.reverse(noteList);
     }
 }

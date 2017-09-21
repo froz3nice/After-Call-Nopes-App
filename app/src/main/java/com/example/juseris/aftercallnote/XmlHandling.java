@@ -10,6 +10,7 @@ import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.example.juseris.aftercallnote.Models.Order;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -30,7 +31,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
 
 import javax.xml.parsers.DocumentBuilder;

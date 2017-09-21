@@ -51,9 +51,8 @@ public class MainListChildItem extends AppCompatActivity {
     private Context context;
     private String phoneNumber;
     private String originalPhoneNr;
-    private ClassNote classNote;
     private RecyclerView contactList;
-    private List<IGenericItem> noteList = null;
+    private ArrayList<IGenericItem> noteList;
     private CheckBox catchCall;
     private SharedPreferences prefs;
     private FloatingActionButton myFab;
@@ -70,7 +69,7 @@ public class MainListChildItem extends AppCompatActivity {
         context = getApplicationContext();
         db = new Database(context);
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        classNote = getIntent().getExtras().getParcelable("classNoteobj");
+        ClassNote classNote = getIntent().getExtras().getParcelable("classNoteobj");
         originalPhoneNr = classNote.getPhoneNumber();
         phoneNumber = Utils.fixNumber(classNote.getPhoneNumber());
         ImageView text = (ImageView) findViewById(R.id.textToContact);
@@ -212,6 +211,7 @@ public class MainListChildItem extends AppCompatActivity {
                 Intent intent = new Intent(context, AllStatisticsView.class);
                 Log.d("phonenr", phoneNumber);
                 intent.putExtra("PhoneNumber", phoneNumber);
+                intent.putExtra("showContactStats",false);
                 boolean hasNoData = db.getStatistics(phoneNumber).getTypedNoteCount() == 0 &&
                         db.getStatistics(phoneNumber).getIncomingCallCount() == 0 &&
                         db.getStatistics(phoneNumber).getOutgoingCallCount() == 0 &&
@@ -235,59 +235,16 @@ public class MainListChildItem extends AppCompatActivity {
         }
     }
 
-    public Date parseOrReturnNull(String date) {
-        try {
-            DateFormat formatter = new SimpleDateFormat("MMMM dd HH:mm", Locale.US);
-            return formatter.parse(date);
-        } catch (ParseException e) {
-            return null;
-        }
-    }
-
-    private void parseToDates() {
-        ArrayList<IGenericItem> newItems = new ArrayList<>();
-        for (IGenericItem item : noteList) {
-            Date date = parseOrReturnNull(((ClassNote) item).getCallDate());
-            try {
-                ((ClassNote) item).setDateObject(date);
-            } catch (Exception e) {
-                Calendar dateTime = new GregorianCalendar(2000, 5, 5, 4, 20);
-                ((ClassNote) item).setDateObject(new Date(dateTime.getTimeInMillis()));
-            }
-            newItems.add(item);
-        }
-        noteList = newItems;
-    }
-
-    public void sort() {
-        Collections.sort(noteList, new Comparator<IGenericItem>() {
-            @Override
-            public int compare(IGenericItem a, IGenericItem b) {
-                Date date2 = ((ClassNote) b).getDateObject();//parseOrReturnNull(((ClassNote) b).getCallDate());
-                Date date1 = ((ClassNote) a).getDateObject();// parseOrReturnNull(((ClassNote) a).getCallDate());
-                if (date1 == null) {
-                    if (date2 == null) {
-                        return 0;
-                    }
-                    return 1;
-                }
-                if (date2 == null) {
-                    return -1;
-                }
-                return date2.compareTo(date1);
-            }
-        });
-        Collections.reverse(noteList);
-    }
-
     public void refreshList() {
         noteList = db.getDataByNumber(phoneNumber);
         noteList.addAll(db.getSyncedNotesByNumber(phoneNumber));
-        parseToDates();
-        sort();
+        //parseToDates();
+        //sort();
+        noteList = Utils.getSortedList(noteList);// sortNotesByDate(parseToDates(noteList));
         Collections.reverse(noteList);
 
         ArrayList<IGenericItem> newItems = db.getNewPrestaByNr(phoneNumber, originalPhoneNr);
+        newItems = Utils.getSortedPrestaList(newItems);
         noteList.addAll(newItems);
 
         ArrayList<IGenericItem> items = db.getPrestashopByNr(phoneNumber, originalPhoneNr);

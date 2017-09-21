@@ -364,14 +364,10 @@ public class ActivityPopupAfter extends AppCompatActivity {
                             category = cat.substring(0, cat.length() - 1);
                             break;
                         default:
-                            int a = 0;
-                            int colorIndex = 0;
                             category = cat;
                             setCategoryColor(Color.BLUE, cat.substring(0, cat.length() - 1));
                             break;
                     }
-
-
                 } else {
                     tw_category.setVisibility(View.GONE);
                 }
@@ -502,24 +498,6 @@ public class ActivityPopupAfter extends AppCompatActivity {
         getMenuInflater().inflate(R.menu.close_notes, menu);
         return true;
     }
-/*
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.date_pick, menu);
-        return true;
-    }*/
-/*
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_select_date:
-
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
-    }*/
 
     public String getContactName(Context context, String phoneNumber) {
         ContentResolver cr = context.getContentResolver();

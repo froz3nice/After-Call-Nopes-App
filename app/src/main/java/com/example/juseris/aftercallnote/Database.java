@@ -236,7 +236,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 ClassNote classNote = new ClassNote(id);
                 classNote.setPhoneNumber(number);
                 classNote.setNotes(note);
-                classNote.setCallDate(callDate);
+                classNote.setDateString(callDate);
                 classNote.setCallTime(callTime);
                 classNote.setName(name);
                 classNote.setCatchCall(catchCall);
@@ -273,7 +273,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     ClassNote classNote = new ClassNote(id);
                     classNote.setPhoneNumber(nr);
                     classNote.setNotes(note);
-                    classNote.setCallDate(callDate);
+                    classNote.setDateString(callDate);
                     classNote.setName(name);
                     classNote.setSynced(1);
                     classNote.setFriendEmail(friendEmail);
@@ -310,7 +310,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 ClassNote classNote = new ClassNote(id);
                 classNote.setPhoneNumber(number);
                 classNote.setNotes(note);
-                classNote.setCallDate(callDate);
+                classNote.setDateString(callDate);
                 classNote.setCallTime(callTime);
                 classNote.setName(name);
                 classNote.setCatchCall(catchCall);
@@ -904,7 +904,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 order.getOrder_state() + "' , '" +
                 order.getOrder_nr() + "' , '" +
                 order.getPhone_nr() + "' , '" +
-                order.getDate() +
+                order.getDateString() +
                 "' ) ";
         noteDatabase.execSQL(SQL);
 
@@ -927,7 +927,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 order.getOrder_state() + "' , '" +
                 order.getOrder_nr() + "' , '" +
                 order.getPhone_nr() + "' , '" +
-                order.getDate() +
+                order.getDateString() +
                 "' ) ";
 
         noteDatabase.execSQL(SQL);
@@ -1065,7 +1065,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     " ) VALUES ( '" +
                     note.getPhoneNumber() + "' , '" +
                     note.getNotes(true) + "' , '" +
-                    note.getCallDate() + "' , '" +
+                    note.getDateString() + "' , '" +
                     note.getCallTime() + "' , '" +
                     note.getName() + "' , '" +
                     note.getCatchCall() + "' , '" +
@@ -1100,7 +1100,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                     " ) VALUES ( '" +
                     note.getPhoneNumber() + "' , '" +
                     note.getNotes(true) + "' , '" +
-                    note.getCallDate() + "' , '" +
+                    note.getDateString() + "' , '" +
                     note.getName() + "' , '" +
                     note.getFriendEmail() + "' , '" +
                     note.getReminder() + "' , '" +
@@ -1135,7 +1135,7 @@ public class Database extends SQLiteOpenHelper implements Serializable {
                 if (!category.equals("Personal ")) {
                     classNote.setPhoneNumber(number);
                     classNote.setNotes(note);
-                    classNote.setCallDate(callDate);
+                    classNote.setDateString(callDate);
                     classNote.setName(name);
                     classNote.setSynced(1);
                     classNote.setFriendEmail(email);

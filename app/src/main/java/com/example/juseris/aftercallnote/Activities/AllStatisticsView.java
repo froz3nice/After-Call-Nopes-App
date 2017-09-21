@@ -93,16 +93,19 @@ public class AllStatisticsView extends AppCompatActivity {
         int[] colorCodes = {
                 Color.rgb(204, 0, 204), Color.rgb(51, 0, 102)};
         setData(colorCodes);
-        setUpLineChart();
-        lineChart.getAxisRight().setEnabled(false);
-        YAxis leftAxis = lineChart.getAxisLeft();
-        leftAxis.setGranularity(1f);
-        leftAxis.setDrawGridLines(false);
-        leftAxis.setAxisMinimum(0f);
-        leftAxis.setDrawAxisLine(false);
-
-        setLineChartData();
-
+        lineChart = (LineChart) findViewById(R.id.lineChart);
+        if (getIntent().getBooleanExtra("showContactStats", true)) {
+            setUpLineChart();
+            lineChart.getAxisRight().setEnabled(false);
+            YAxis leftAxis = lineChart.getAxisLeft();
+            leftAxis.setGranularity(1f);
+            leftAxis.setDrawGridLines(false);
+            leftAxis.setAxisMinimum(0f);
+            leftAxis.setDrawAxisLine(false);
+            setLineChartData();
+        }else{
+            lineChart.setVisibility(View.GONE);
+        }
         // mChart.spin(2000, 0, 360);
 
         LinearLayout layout = (LinearLayout) findViewById(R.id.table);
@@ -248,7 +251,6 @@ public class AllStatisticsView extends AppCompatActivity {
     }
 
     private void setUpLineChart() {
-        lineChart = (LineChart) findViewById(R.id.lineChart);
         lineChart.setDrawGridBackground(false);
 
         // no description text

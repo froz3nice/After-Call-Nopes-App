@@ -262,7 +262,7 @@ public class ChildItemAdapter extends RecyclerView.Adapter<ChildItemAdapter.View
                 SimpleDateFormat df1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
                 Date result;
                 try {
-                    result = df1.parse(order.getDate());
+                    result = df1.parse(order.getDateString());
                 } catch (ParseException e) {
                     result = new Date();
                 }

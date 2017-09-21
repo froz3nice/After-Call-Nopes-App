@@ -3,7 +3,6 @@ package com.example.juseris.aftercallnote.Adapters;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
@@ -25,7 +24,6 @@ import android.widget.Toast;
 
 import com.example.juseris.aftercallnote.Activities.MainListChildItem;
 import com.example.juseris.aftercallnote.Database;
-import com.example.juseris.aftercallnote.Models.CategoriesAndColors;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.example.juseris.aftercallnote.Models.Order;
@@ -155,7 +153,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> im
                         ClassNote c = ((ClassNote) gen);
                         if (c.getNotes(false).toUpperCase().contains(constraint.toString().toUpperCase())
                                 || c.getName().toUpperCase().contains(constraint.toString().toUpperCase())
-                                || c.getCallDate().toUpperCase().contains(constraint.toString().toUpperCase())
+                                || c.getDateString().toUpperCase().contains(constraint.toString().toUpperCase())
                                 || c.getPhoneNumber().toUpperCase().contains(constraint.toString().toUpperCase())) {
                             filteredContacts.add(c);
                         }
@@ -317,7 +315,7 @@ public class MainAdapter extends RecyclerView.Adapter<MainAdapter.ViewHolder> im
                 SimpleDateFormat df1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
                 Date result;
                 try {
-                    result = df1.parse(order.getDate());
+                    result = df1.parse(order.getDateString());
                 } catch (ParseException e) {
                     result = new Date();
                 }

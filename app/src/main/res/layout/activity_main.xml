@@ -173,18 +173,26 @@
                 android:layout_marginStart="@dimen/activity_horizontal_margin"
                 android:text="Add new email"
                 android:textColor="@color/black" />
-
-            <TextView
-                android:id="@+id/explanation"
+            <ScrollView
+                android:id="@+id/SCROLLER_ID"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="bottom"
-                android:layout_marginLeft="@dimen/activity_horizontal_margin"
-                android:layout_marginStart="@dimen/activity_horizontal_margin"
-                android:layout_marginTop="10dp"
-                android:paddingEnd="10dp"
-                android:paddingRight="10dp"
-                android:text="@string/drawer_explanation" />
+                android:scrollbars="vertical">
+
+                <TextView
+                    android:id="@+id/explanation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom"
+                    android:layout_marginLeft="@dimen/activity_horizontal_margin"
+                    android:layout_marginStart="@dimen/activity_horizontal_margin"
+                    android:layout_marginTop="10dp"
+                    android:focusable="false"
+                    android:paddingEnd="10dp"
+                    android:paddingRight="10dp"
+                    android:text="@string/drawer_explanation" />
+
+            </ScrollView>
         </LinearLayout>
 
     </android.support.design.widget.NavigationView>

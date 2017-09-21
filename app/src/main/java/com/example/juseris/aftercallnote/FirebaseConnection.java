@@ -123,6 +123,8 @@ public class FirebaseConnection {
 
                     @Override
                     protected Void doInBackground(Void... voids) {
+                        if(android.os.Debug.isDebuggerConnected())
+                            android.os.Debug.waitForDebugger();
                         ArrayList<String> list = new ArrayList<>();
                         for (DataSnapshot childSnapshot : dataSnapshot.getChildren()) {
                             String email = childSnapshot.getKey();
@@ -220,12 +222,6 @@ public class FirebaseConnection {
                         }
                     }
                     db.insertToSyncedTable(list);
-                    activity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            activity.refreshList();
-                        }
-                    });
                 }
                 return null;
             }
@@ -236,6 +232,7 @@ public class FirebaseConnection {
                 if (progressLayout != null) {
                     progressLayout.setVisibility(View.GONE);
                 }
+                activity.refreshList();
             }
         }
         new LoadContact().execute();
@@ -330,7 +327,7 @@ public class FirebaseConnection {
         for (IGenericItem c : l) {
             if (c instanceof ClassNote) {
                 if (((ClassNote) c).isSynced() == 0) {
-                    list.add(new DataForSyncingModel(((ClassNote) c).getCallDate(), ((ClassNote) c).getNotes(true), ((ClassNote) c).getPhoneNumber(), ((ClassNote) c).getCategory()));
+                    list.add(new DataForSyncingModel(((ClassNote) c).getDateString(), ((ClassNote) c).getNotes(true), ((ClassNote) c).getPhoneNumber(), ((ClassNote) c).getCategory()));
                 }
             }
         }
@@ -385,7 +382,7 @@ public class FirebaseConnection {
         ClassNote note = new ClassNote();
         note.setNotes(syncedNote.getNotes());
         note.setName(getContactName(context, syncedNote.getPhoneNumber()));
-        note.setCallDate(syncedNote.getCallDate());
+        note.setDateString(syncedNote.getCallDate());
         note.setPhoneNumber(Utils.fixNumber(syncedNote.getPhoneNumber()));
         note.setSynced(0);
         note.setReminder("");
@@ -407,7 +404,7 @@ public class FirebaseConnection {
 
         return ((ClassNote) c).getNotes(true).equals(((ClassNote) n).getNotes(true))
                 && ((ClassNote) c).getPhoneNumber().equals(((ClassNote) n).getPhoneNumber())
-                && ((ClassNote) c).getCallDate().equals(((ClassNote) n).getCallDate());
+                && ((ClassNote) c).getDateString().equals(((ClassNote) n).getDateString());
     }
 
     public void addMyEmail(final String userId, final String email) {

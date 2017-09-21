@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -36,6 +37,7 @@ import com.example.juseris.aftercallnote.Models.CallStatisticsEntity;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.IGenericItem;
+import com.example.juseris.aftercallnote.PhoneCallReceiver;
 import com.example.juseris.aftercallnote.R;
 import com.example.juseris.aftercallnote.Utils;
 import com.example.juseris.aftercallnote.XmlHandling;
@@ -348,12 +350,12 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void sortNotesByDate() {
-        Collections.sort(noteList, new Comparator<IGenericItem>() {
+    private ArrayList<IGenericItem> sortNotesByDate(ArrayList<IGenericItem> list) {
+        Collections.sort(list, new Comparator<IGenericItem>() {
             @Override
             public int compare(IGenericItem a, IGenericItem b) {
-                Date date2 = ((ClassNote) b).getDateObject();//parseOrReturnNull(((ClassNote) b).getCallDate());
-                Date date1 = ((ClassNote) a).getDateObject();// parseOrReturnNull(((ClassNote) a).getCallDate());
+                Date date2 = b.getDateObject();//parseOrReturnNull(((ClassNote) b).getDateString());
+                Date date1 = a.getDateObject();// parseOrReturnNull(((ClassNote) a).getDateString());
                 if (date1 == null) {
                     if (date2 == null) {
                         return 0;
@@ -366,38 +368,25 @@ public class MainActivity extends AppCompatActivity
                 return date2.compareTo(date1);
             }
         });
-        Collections.reverse(noteList);
+        Collections.reverse(list);
+        return list;
     }
-
-    private void parseToDates() {
-        ArrayList<IGenericItem> newItems = new ArrayList<>();
-        for (IGenericItem item : noteList) {
-            Date date = parseOrReturnNull(((ClassNote) item).getCallDate());
-            try {
-                ((ClassNote) item).setDateObject(date);
-            } catch (Exception e) {
-                Calendar dateTime = new GregorianCalendar(2000, 5, 5, 4, 20);
-                ((ClassNote) item).setDateObject(new Date(dateTime.getTimeInMillis()));
-            }
-            newItems.add(item);
-        }
-        noteList = newItems;
-    }
+    private Parcelable recyclerViewState;
 
     public void refreshList() {
         noteList = db.getData();
         noteList.addAll(db.getSyncedData());
-        parseToDates();
-        sortNotesByDate();
+        noteList = Utils.getSortedList(noteList);// sortNotesByDate(parseToDates(noteList));
         Collections.reverse(noteList);
         ArrayList<IGenericItem> newItems = db.getNewPrestashopData();
-        noteList.addAll(newItems);
+        newItems = Utils.getSortedPrestaList(newItems);// sortNotesByDate(parseToDates(newItems));
+         noteList.addAll(newItems);
 
         ArrayList<IGenericItem> items = db.getPrestashopData();
         //Collections.reverse(items);
         noteList.addAll(items);
         listAdapter = new MainAdapter(this, noteList);
-        listAdapter.notifyDataSetChanged();
+        //listAdapter.notifyDataSetChanged();
         recyclerView.setAdapter(listAdapter);
         recyclerView.setFocusable(true);
         mLayoutManager = new LinearLayoutManager(this);
