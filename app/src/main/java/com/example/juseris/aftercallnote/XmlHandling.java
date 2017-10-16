@@ -3,6 +3,8 @@ package com.example.juseris.aftercallnote;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.preference.PreferenceManager;
@@ -58,15 +60,24 @@ public class XmlHandling {
     private Database db;
     private long syncedItemsCount = 0;
 
-    public XmlHandling(Context ctx) {
+    public XmlHandling(Context ctx,String urlName,String key) {
         context = ctx;
-        key = context.getString(R.string.prestashop_key);
-        urlName = "https://www.medikos.lt";
+        this.key = key;//context.getString(R.string.prestashop_key);
+        this.urlName = urlName;//"https://www.medikos.lt";
         myRef = Utils.getDatabase().getReference();
         user = FirebaseAuth.getInstance().getCurrentUser();
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
         db = new Database(context);
-        new Test().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        if(isNetworkAvailable()) {
+            new Test().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
+    }
+
+    private boolean isNetworkAvailable() {
+        ConnectivityManager connectivityManager
+                = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
+        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
     }
 
     private Document getXmlFileDocument(URL url) throws IOException, ParserConfigurationException, SAXException {
@@ -123,9 +134,10 @@ public class XmlHandling {
                     Order order = getOrder(temp, nList);
                     if (order.getOrder_nr() != null) {
                         orders.add(order);
+                        Log.d("Authentication success", order.getDateString());
+                        db.insertNewPrestaOrder(order);
                         if (user != null) {
                             insertOrdersToFirebase(nList, order);
-                            db.insertNewPrestaOrder(order);
                         }
                     }
                 }
@@ -136,9 +148,9 @@ public class XmlHandling {
                 Order order = getOrder(temp, nList);
                 if (order.getOrder_nr() != null) {
                     orders.add(order);
+                    db.insertPrestashopOrder(order);
                     if (user != null) {
                         insertOrdersToFirebase(nList, order);
-                        db.insertPrestashopOrder(order);
                         //lastDownloadedRef.setValue(temp+1);
                         prefs.edit().putInt("lastDownloadedItem", temp).apply();
                         if (temp > size - 2) {
@@ -166,6 +178,7 @@ public class XmlHandling {
             String customerUrl = customer.item(0).getAttributes().getNamedItem("xlink:href").getNodeValue();
             String firstName;
             String lastName;
+            Log.d("customer url",customerUrl);
             try {
                 Document customerDoc = getXmlFileDocument(new URL(customerUrl));
                 customerDoc.getDocumentElement().normalize();
@@ -178,6 +191,8 @@ public class XmlHandling {
 
                 firstName = getCharacterDataFromElement(firstNameElement);
                 lastName = getCharacterDataFromElement(lastNameElement);
+                Log.d("first name",firstName);
+                Log.d("lastName",lastName);
             } catch (Exception e) {
                 e.printStackTrace();
                 firstName = "";

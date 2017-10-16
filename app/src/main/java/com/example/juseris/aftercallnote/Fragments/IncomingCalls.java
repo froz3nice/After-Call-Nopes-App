@@ -86,10 +86,6 @@ public class IncomingCalls extends Fragment {
                 contacts = new ArrayList<>();
 
                 if (phones != null) {
-                    Log.e("count", "" + phones.getCount());
-                    if (phones.getCount() == 0) {
-                        Toast.makeText(getActivity(), "No contacts in your contact list.", Toast.LENGTH_LONG).show();
-                    }
                     int number = phones.getColumnIndex(CallLog.Calls.NUMBER);
                     int name = phones.getColumnIndex(CallLog.Calls.CACHED_NAME);
                     int type = phones.getColumnIndex(CallLog.Calls.TYPE);

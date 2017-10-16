@@ -17,4 +17,8 @@
         android:id="@+id/action_showSynced"
         app:showAsAction="never"
         android:title="@string/showSyncedNotes" />
+    <item
+        android:id="@+id/action_testPresta"
+        app:showAsAction="never"
+        android:title="orders only(testing)" />
 </menu>

@@ -66,8 +66,6 @@ public class OutgoingCalls extends Fragment {
 
     class LoadContact extends AsyncTask<Void, Void, Void> {
 
-        ArrayList<ContactEntity> outgoingCalls = new ArrayList<>();
-
         @Override
         protected void onPreExecute() {
             super.onPreExecute();

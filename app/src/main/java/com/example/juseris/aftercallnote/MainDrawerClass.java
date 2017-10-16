@@ -143,7 +143,6 @@ public class MainDrawerClass {
         userName = (TextView) navigationView.findViewById(R.id.nav_username);
 
         selector = (ImageButton) navigationView.findViewById(R.id.selector);
-        userName = (TextView) navigationView.findViewById(R.id.nav_username);
         nav_Menu = navigationView.getMenu();
         loggedInLayout = (LinearLayout) navigationView.findViewById(R.id.loggedInLayout);
         loggedOffLayout = (LinearLayout) navigationView.findViewById(R.id.loggedOffLayout);
@@ -305,6 +304,7 @@ public class MainDrawerClass {
             loggedOffLayout.setVisibility(View.GONE);
             TextView tw = (TextView) navigationView.findViewById(R.id.email);
             tw.setText(user.getEmail());
+            userName.setText(user.getEmail());
             lw = (ListView) navigationView.findViewById(R.id.nav_sync_list);
             list = new ArrayList<>();
             final String email = user.getEmail().replace(".", ",");
@@ -456,7 +456,6 @@ public class MainDrawerClass {
                             activity.dialog.dismiss();
                             Toast.makeText(activity, "Successfully logged in",
                                     Toast.LENGTH_SHORT).show();
-                            new XmlHandling(context);
                         }
                     }
                 });

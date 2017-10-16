@@ -27,7 +27,7 @@ public class CachedFileProvider extends ContentProvider {
     private static final String CLASS_NAME = "CachedFileProvider";
 
     // The authority is the symbolic name for the provider class
-    public static final String AUTHORITY = "com.stephendnicholas.gmailattach.provider";
+    public static final String AUTHORITY = "com.gmail.export";
 
     // UriMatcher used to match against incoming requests
     private UriMatcher uriMatcher;
@@ -66,7 +66,6 @@ public class CachedFileProvider extends ContentProvider {
                         + uri.getLastPathSegment();
 
                 // Create & return a ParcelFileDescriptor pointing to the file
-                // Note: I don't care what mode they ask for - they're only getting
                 // read only
                 ParcelFileDescriptor pfd = ParcelFileDescriptor.open(new File(
                         fileLocation), ParcelFileDescriptor.MODE_READ_ONLY);
@@ -167,8 +166,6 @@ public class CachedFileProvider extends ContentProvider {
         String[] TO = {email};
         Intent emailIntent = new Intent(Intent.ACTION_SEND_MULTIPLE);
         //Explicitly only use Gmail to send
-        //emailIntent.setClassName("com.google.android.gm", "com.google.android.gm.ComposeActivityGmail");
-
         //emailIntent.setData(Uri.parse("mailto:"));
         emailIntent.setType("text/plain");
 

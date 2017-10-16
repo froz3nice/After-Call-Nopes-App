@@ -24,7 +24,7 @@
     <LinearLayout
         android:id="@+id/layoutDots"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/dots_height"
+        android:layout_height="wrap_content"
         android:layout_above="@id/btn_next"
         android:layout_marginBottom="10dp"
         android:gravity="center"

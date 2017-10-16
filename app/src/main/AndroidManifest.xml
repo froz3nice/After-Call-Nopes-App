@@ -17,7 +17,6 @@
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.READ_PROFILE" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
 
     <uses-sdk tools:overrideLibrary="com.lany.picker"/>
 
@@ -28,9 +27,19 @@
         android:supportsRtl="true"
         android:name=".App"
         android:theme="@style/AppTheme">
+
+        <receiver android:name=".PhoneCallReceiver"
+            android:enabled="true">
+            <intent-filter>
+                <action android:name="android.intent.action.PHONE_STATE" />
+                <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name=".CachedFileProvider"
-            android:authorities="com.stephendnicholas.gmailattach.provider"
+            android:authorities="com.gmail.export"
             android:exported="false"
             android:grantUriPermissions="true" />
 
@@ -64,6 +73,15 @@
             android:name=".FlyingButton"
             android:enabled="true" />
 
+        <service android:name=".ReceiverHelperService"
+            android:enabled="true"/>
+
+        <service android:name=".StateChecker"
+                    android:enabled="true"/>
+
+        <service android:name=".ServiceNotificationRemover"
+            android:enabled="true"/>
+
         <activity
             android:name=".Activities.ActivityPopupAfter"
             android:label="@string/title_activity_activity_popup_after"
@@ -78,15 +96,8 @@
             android:label="@string/title_activity_activity_popup_before"
             android:launchMode="singleInstance"
             android:screenOrientation="portrait"
-            android:theme="@style/AppTheme.NoActionBar" />
-
-        <receiver android:name=".PhoneCallReceiver"
-                  android:enabled="true">
-            <intent-filter>
-                <action android:name="android.intent.action.PHONE_STATE" />
-                <action android:name="android.intent.action.NEW_OUTGOING_CALL" />
-            </intent-filter>
-        </receiver>
+            android:theme="@style/AppTheme.NoActionBar"
+            />
 
         <activity
             android:name=".Activities.SettingsActivity"

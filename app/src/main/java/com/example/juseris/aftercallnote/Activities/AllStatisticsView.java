@@ -26,6 +26,7 @@ import android.widget.Toast;
 import com.example.juseris.aftercallnote.Models.CallStatisticsEntity;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.R;
+import com.example.juseris.aftercallnote.Utils;
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
@@ -78,7 +79,7 @@ public class AllStatisticsView extends AppCompatActivity {
             setTitle("Statistics");
         } else {
             cse = db.getStatistics(getIntent().getStringExtra("PhoneNumber"));
-            setTitle("Statistics of " + getContactName(getApplicationContext(), cse.getNumber()));
+            setTitle("Statistics of " + Utils.getContactName(getApplicationContext(), cse.getNumber()));
         }
         setUpPieChart();
         float calls = cse.getIncomingCallCount() + cse.getOutgoingCallCount();
@@ -314,6 +315,16 @@ public class AllStatisticsView extends AppCompatActivity {
         prefs.edit().putInt("outgoing."+5,0).apply();
         prefs.edit().putInt("outgoing."+6,0).apply();
         prefs.edit().putInt("outgoing."+7,0).apply();*/
+        Calendar cal = Calendar.getInstance();
+        int today = cal.get(Calendar.DAY_OF_WEEK);
+        if (prefs.getInt("outgoingTemp." + today, 0) != 0) {
+            prefs.edit().putInt("outgoing." + today, 0).apply();
+            prefs.edit().putInt("outgoingTemp." + today, 0).apply();
+        }
+        if (prefs.getInt("incomingTemp." + today, 0) != 0) {
+            prefs.edit().putInt("incoming." + today, 0).apply();
+            prefs.edit().putInt("incomingTemp." + today, 0).apply();
+        }
 
         final HashMap<Integer, String> numMap = new HashMap<>();
         Calendar calendar = Calendar.getInstance();
@@ -423,7 +434,7 @@ public class AllStatisticsView extends AppCompatActivity {
                 + cse.getRemindersAddedCount() + cse.getTypedNoteCount();
         if (total == 0) {
             AllStatisticsView.this.finish();
-            Toast.makeText(getApplicationContext(), "no data yet", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(), "No data yet", Toast.LENGTH_SHORT).show();
         }
         DecimalFormat format = new DecimalFormat();
         format.setDecimalSeparatorAlwaysShown(false);
@@ -454,25 +465,6 @@ public class AllStatisticsView extends AppCompatActivity {
         mChart.highlightValues(null);
 
         mChart.invalidate();
-    }
-
-    public String getContactName(Context context, String phoneNumber) {
-        ContentResolver cr = context.getContentResolver();
-        Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber));
-        Cursor cursor = cr.query(uri, new String[]{ContactsContract.PhoneLookup.DISPLAY_NAME}, null, null, null);
-        if (cursor == null) {
-            return null;
-        }
-        String contactName = phoneNumber;
-        if (cursor.moveToFirst()) {
-            contactName = cursor.getString(cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME));
-        }
-
-        if (!cursor.isClosed()) {
-            cursor.close();
-        }
-
-        return contactName;
     }
 
 }

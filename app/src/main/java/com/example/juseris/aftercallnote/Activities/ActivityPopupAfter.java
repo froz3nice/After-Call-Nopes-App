@@ -177,7 +177,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
 
         if (number != null) {
             if (number != null && !number.equals("")) {
-                name = getContactName(context, number);
+                name = Utils.getContactName(context, number);
             }
         }
         setTitle("");
@@ -324,7 +324,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
             number = Utils.fixNumber(prefs.getString("ChosenNumber", ""));
             box.setChecked(prefs
                     .getBoolean(number, true));
-            name = getContactName(context, number);
+            name = Utils.getContactName(context, number);
             if (name.equals("")) {
                 name_number.setText(number);
             } else {
@@ -434,51 +434,50 @@ public class ActivityPopupAfter extends AppCompatActivity {
     }
 
     public void setReminder(int i, String note) {
-        if (Build.VERSION.SDK_INT >= 14) {
-            //finish();
-            Toast.makeText(context, "Reminder saved", Toast.LENGTH_SHORT).show();
-            Calendar cal = Calendar.getInstance();
-            long startDate = cal.getTimeInMillis() + i * 60 * 1000;
-            long endDate = cal.getTimeInMillis() + i * 60 * 1000 + 60 * 1000;
-            ContentValues event = new ContentValues();
-            event.put("calendar_id", 1);
-            if (name == null) {
-                event.put("title", "Your note for " + number + " : " + note);
-            } else {
-                event.put("title", "Your note for " + name + " : " + note);
-            }
-            event.put("eventTimezone", TimeZone.getDefault().getID());
-            event.put("dtstart", startDate);
-            event.put("dtend", endDate);
+        Calendar cal = Calendar.getInstance();
+        long startDate = cal.getTimeInMillis() + i * 60 * 1000;
+        long endDate = cal.getTimeInMillis() + i * 60 * 1000 + 60 * 1000;
+        ContentValues event = new ContentValues();
+        event.put("calendar_id", 1);
+        if (name == null) {
+            event.put("title", "Your note for " + number + " : " + note);
+        } else {
+            event.put("title", "Your note for " + name + " : " + note);
+        }
+        event.put("eventTimezone", TimeZone.getDefault().getID());
+        event.put("dtstart", startDate);
+        event.put("dtend", endDate);
 
-            event.put("allDay", 0); // 0 for false, 1 for true
-            event.put("eventStatus", 1);
-            event.put("hasAlarm", 1); // 0 for false, 1 for true
+        event.put("allDay", 0); // 0 for false, 1 for true
+        event.put("eventStatus", 1);
+        event.put("hasAlarm", 1); // 0 for false, 1 for true
 
-            String eventUriString = "content://com.android.calendar/events";
-            Uri eventUri = context.getApplicationContext()
-                    .getContentResolver()
-                    .insert(Uri.parse(eventUriString), event);
+        String eventUriString = "content://com.android.calendar/events";
+        Uri eventUri = context.getApplicationContext()
+                .getContentResolver()
+                .insert(Uri.parse(eventUriString), event);
 
-            if (eventUri != null) {
-                eventID = Long.parseLong(eventUri.getLastPathSegment());
-            }
+        if (eventUri != null) {
+            eventID = Long.parseLong(eventUri.getLastPathSegment());
+        }
 
-            int minutes = 0;
-            // add reminder for the event
-            ContentValues reminders = new ContentValues();
-            reminders.put("event_id", eventID);
-            reminders.put("method", "1");
-            reminders.put("minutes", minutes);
+        int minutes = 0;
+        // add reminder for the event
+        ContentValues reminders = new ContentValues();
+        reminders.put("event_id", eventID);
+        reminders.put("method", "1");
+        reminders.put("minutes", minutes);
 
-            String reminderUriString = "content://com.android.calendar/reminders";
+        String reminderUriString = "content://com.android.calendar/reminders";
+        try {
             context.getApplicationContext().getContentResolver()
                     .insert(Uri.parse(reminderUriString), reminders);
-
-            database.createOrUpdateStatistics(Utils.fixNumber(number), 0, 0, 0, 1, 0, 0);
-        } else {
-            Toast.makeText(context, "Cannot add reminder, android version too low", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "Reminder saved", Toast.LENGTH_SHORT).show();
+        }catch (Exception e){
+            Toast.makeText(context, "Please add an accound to save reminder", Toast.LENGTH_SHORT).show();
         }
+
+        database.createOrUpdateStatistics(Utils.fixNumber(number), 0, 0, 0, 1, 0, 0);
     }
 
     @Override
@@ -499,24 +498,6 @@ public class ActivityPopupAfter extends AppCompatActivity {
         return true;
     }
 
-    public String getContactName(Context context, String phoneNumber) {
-        ContentResolver cr = context.getContentResolver();
-        Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber));
-        Cursor cursor = cr.query(uri, new String[]{ContactsContract.PhoneLookup.DISPLAY_NAME}, null, null, null);
-        if (cursor == null) {
-            return null;
-        }
-        String contactName = "";
-        if (cursor.moveToFirst()) {
-            contactName = cursor.getString(cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME));
-        }
-
-        if (!cursor.isClosed()) {
-            cursor.close();
-        }
-
-        return contactName;
-    }
 
     private boolean isMyServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -659,7 +640,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
         final AlertDialog.Builder alertDialog = new AlertDialog.Builder(ActivityPopupAfter.this, R.style.MyAlertDialogStyle);
 
         MaterialCalendarView mcv = (MaterialCalendarView) dialogView.findViewById(R.id.calendarView);
-        ;
+
         mcv.state().edit()
                 .setFirstDayOfWeek(Calendar.WEDNESDAY)
                 .setMinimumDate(CalendarDay.from(

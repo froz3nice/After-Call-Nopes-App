@@ -355,13 +355,13 @@ public class ClassNote implements Parcelable,IGenericItem {
             setCategoryColor(context, background, R.color.important);
             return "IMPORTANT";
         } else {
-            Database db = new Database(context);
+            /*Database db = new Database(context);
             ArrayList<CategoriesAndColors> cats = db.getCatsAndColors();
             for (CategoriesAndColors cat_color : cats) {
                 if (cat_color.getCategory().equals(cat.substring(0, cat.length() - 1))) {
 
                 }
-            }
+            }*/
             setCategoryColor(context, background, Color.BLUE);
             return cat.substring(0, cat.length() - 1);
 

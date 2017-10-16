@@ -11,7 +11,7 @@
         <item name="android:windowAnimationStyle">@null</item>
         <item name="android:checkboxStyle">@style/customCheckBoxStyle</item>
         <item name="android:popupMenuStyle">@style/PopupMenu</item>
-
+        <item name="android:textColorHint">@color/line</item>
     </style>
 
 
@@ -52,6 +52,7 @@
         <item name="android:layout_height">wrap_content</item>
         <item name="android:textColor">#6e6e6e</item>
         <item name="android:textSize">17sp</item>
+        <item name="android:textColorHint">@color/line</item>
     </style>
 
     <style name="MyAlertDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">

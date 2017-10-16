@@ -1,8 +1,11 @@
 package com.example.juseris.aftercallnote;
 
-import android.os.AsyncTask;
-import android.os.Build;
-import android.util.Log;
+import android.app.ActivityManager;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
+import android.provider.ContactsContract;
 
 import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.google.firebase.database.FirebaseDatabase;
@@ -86,7 +89,6 @@ public class Utils {
             return formatter.parse(date);
         } catch (ParseException e) {
             e.printStackTrace();
-            Log.e("pizdec","no parse, error");
             return null;
         }
     }
@@ -96,7 +98,6 @@ public class Utils {
             return formatter.parse(date);
         } catch (ParseException e) {
             e.printStackTrace();
-            Log.e("pizdec","no parse, error");
             return null;
         }
     }
@@ -134,6 +135,36 @@ public class Utils {
         ArrayList<IGenericItem> sorted = sort(parsed);
         Collections.reverse(sorted);
         return sorted;
+    }
+
+    public static String getContactName(Context context, String phoneNumber) {
+        ContentResolver cr = context.getContentResolver();
+        Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber));
+        Cursor cursor = cr.query(uri, new String[]{ContactsContract.PhoneLookup.DISPLAY_NAME}, null, null, null);
+        if (cursor == null) {
+            return null;
+        }
+        String contactName = "";
+        if (cursor.moveToFirst()) {
+            contactName = cursor.getString(cursor.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME));
+        }
+
+        if (!cursor.isClosed()) {
+            cursor.close();
+        }
+
+        return contactName;
+    }
+
+
+    public static boolean isMyServiceRunning(Class<?> serviceClass, Context ctx) {
+        ActivityManager manager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

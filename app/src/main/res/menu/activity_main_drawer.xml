@@ -22,6 +22,12 @@
             android:id="@+id/nav_allIncomingCalls"
             android:icon="@drawable/ic_phone_black_24dp"
             android:title="@string/AllCalls" />
+
+        <item
+            android:id="@+id/nav_prestashop"
+            android:icon="@drawable/ic_phone_black_24dp"
+            android:title="@string/eCommerse" />
+
         <item
             android:id="@+id/nav_about"
             android:icon="@drawable/ic_about"

@@ -56,9 +56,6 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseAuth auth;
     private ProgressBar progressBar;
     private Button btnSignup, btnLogin;
-    private FirebaseAuth.AuthStateListener mAuthListener;
-    private GoogleApiClient mGoogleApiClient;
-    private FirebaseDatabase database;
     private DatabaseReference myRef;
 
     @Override
@@ -85,8 +82,6 @@ public class LoginActivity extends AppCompatActivity {
         }
         if (isNetworkAvailable()) {
             auth = FirebaseAuth.getInstance();
-
-
             inputEmail = (EditText) findViewById(R.id.email);
             inputPassword = (EditText) findViewById(R.id.password);
             progressBar = (ProgressBar) findViewById(R.id.progressBar);

@@ -2,13 +2,17 @@ package com.example.juseris.aftercallnote.Activities;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -16,9 +20,12 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.util.Base64;
+import android.util.Patterns;
 import android.view.MenuInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -28,6 +35,10 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.example.juseris.aftercallnote.Adapters.MainAdapter;
@@ -37,8 +48,11 @@ import com.example.juseris.aftercallnote.Models.CallStatisticsEntity;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.IGenericItem;
+import com.example.juseris.aftercallnote.Models.Order;
 import com.example.juseris.aftercallnote.PhoneCallReceiver;
 import com.example.juseris.aftercallnote.R;
+import com.example.juseris.aftercallnote.ServiceNotificationRemover;
+import com.example.juseris.aftercallnote.StateChecker;
 import com.example.juseris.aftercallnote.Utils;
 import com.example.juseris.aftercallnote.XmlHandling;
 import com.google.android.gms.auth.api.Auth;
@@ -50,6 +64,11 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -60,7 +79,11 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import retrofit2.http.Url;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class MainActivity extends AppCompatActivity
@@ -83,6 +106,7 @@ public class MainActivity extends AppCompatActivity
     DatabaseReference myRef;
     private SharedPreferences prefs;
     private MainDrawerClass mainDrawer;
+    private Dialog prestaDialog;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -175,12 +199,20 @@ public class MainActivity extends AppCompatActivity
             email = user.getEmail();
             String fixedEmail = email.replace(".", ",");
             String syncOccured = prefs.getString("SyncOccured", "");
-            if (syncOccured.equals("")) {
-                con.addMyNotes(fixedEmail);
-            }
+            //if (syncOccured.equals("")) {
+            con.addMyNotes(fixedEmail);
+            //}
             con.fetchDataFromFirebase(fixedEmail);
-            new XmlHandling(context);
         }
+        String key = prefs.getString("web_key","");
+        String url = prefs.getString("web_url","");
+        if(!key.equals("") && !url.equals("")) {
+            new XmlHandling(context, url, key);
+        }
+        if(Utils.isMyServiceRunning(StateChecker.class,context)) {
+            startService(new Intent(context, StateChecker.class));
+        }
+        startService(new Intent(context, ServiceNotificationRemover.class));
     }
 
     @Override
@@ -219,9 +251,22 @@ public class MainActivity extends AppCompatActivity
             case R.id.action_showSynced:
                 showSyncedNotesFirst();
                 return true;
+            case R.id.action_testPresta:
+                testPresta();
+                return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
+    }
+    private void testPresta(){
+        ArrayList<IGenericItem> a = new ArrayList<>();
+        for (IGenericItem note : noteList) {
+            if (note instanceof Order) {
+                a.add(note);
+            }
+        }
+        listAdapter = new MainAdapter(this, a);
+        recyclerView.setAdapter(listAdapter);
     }
 
     private void showSyncedNotesFirst() {
@@ -233,6 +278,7 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         }
+
         listAdapter = new MainAdapter(this, a);
         recyclerView.setAdapter(listAdapter);
     }
@@ -283,6 +329,46 @@ public class MainActivity extends AppCompatActivity
         } else if (id == R.id.nav_allIncomingCalls) {
             Intent i = new Intent(this, AllCallsActivity.class);
             startActivity(i);
+        }else if (id == R.id.nav_prestashop) {
+            prestaDialog = new Dialog(context);
+            prestaDialog.setContentView(R.layout.ecommerse_layout);
+            prestaDialog.setTitle("Enter url and web api key");
+            final EditText key = (EditText) prestaDialog.findViewById(R.id.key);
+            final EditText url = (EditText) prestaDialog.findViewById(R.id.url);
+
+            Button dialogButton = (Button) prestaDialog.findViewById(R.id.presta_button);
+            dialogButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+
+                    String urlStr = url.getText().toString();
+                    String keyStr = key.getText().toString();
+                    if(urlStr.length() > 2) {
+                        if (urlStr.substring(0, 3).equals("www")) {
+                            urlStr = "https://" + urlStr;
+                        }
+                    }
+                    if(!isValidUrl(urlStr)) {
+                        Toast.makeText(context, "wrong Url", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    try {
+                        validateKey(keyStr,urlStr);
+                    } catch (InterruptedException | ExecutionException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            });
+            String key_str = prefs.getString("web_key","");
+            String url_str = prefs.getString("web_url","");
+            if(key_str.equals("") && url_str.equals("")) {
+                ((InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE))
+                        .toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
+                prestaDialog.show();
+            }else{
+                Toast.makeText(context, "Prestashop already connected", Toast.LENGTH_SHORT).show();
+            }
         } else if (id == R.id.nav_acc_signIn) {
             Intent i = new Intent(MainActivity.this, LoginActivity.class);
             startActivity(i);
@@ -298,6 +384,89 @@ public class MainActivity extends AppCompatActivity
         super.onStart();
         if (hasInitialized) {
             refreshList();
+        }
+    }
+
+    private boolean isValidUrl(String url) {
+        Pattern p = Patterns.WEB_URL;
+        Matcher m = p.matcher(url.toLowerCase());
+        return m.matches();
+    }
+    boolean isValid = false;
+
+    private void validateKey(final String key,final String url) throws ExecutionException, InterruptedException {
+        Authentication asyncTask = (Authentication) new Authentication(new Authentication.AsyncResponse(){
+
+            @Override
+            public void processFinish(Boolean output) {
+                if(output){
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    if(user != null) {
+                        prefs.edit().putString("web_key",key).apply();
+                        prefs.edit().putString("web_url",url).apply();
+                        new XmlHandling(context, url, key);
+                        Toast.makeText(context, "Getting prestashop data...", Toast.LENGTH_SHORT).show();
+                        prestaDialog.dismiss();
+                    }else{
+                        Toast.makeText(context, "Please log in and try again", Toast.LENGTH_SHORT).show();
+                    }
+                }else{
+                    Toast.makeText(context, "Wrong web api key or url", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR,new MyTaskParams(key,url));
+
+    }
+
+    private class MyTaskParams {
+        String key;
+        String url;
+        MyTaskParams(String key,String url) {
+            this.key = key;
+            this.url = url;
+        }
+    }
+
+    public static class Authentication extends AsyncTask<MyTaskParams, Void, Boolean> {
+
+        public interface AsyncResponse {
+            void processFinish(Boolean output);
+        }
+        public AsyncResponse delegate = null;
+
+        public Authentication(AsyncResponse delegate){
+            this.delegate = delegate;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+        }
+
+        @Override
+        protected Boolean doInBackground(MyTaskParams... params) {
+            String authToBytes = params[0].key + ":" + "";
+            String authBytesString = Base64.encodeToString(authToBytes.getBytes(), Base64.DEFAULT);// I keep it generic
+            HttpURLConnection urlConnection = null;
+            try {
+                urlConnection = (HttpURLConnection) new URL(params[0].url)
+                        .openConnection();
+                urlConnection.setDoOutput(false);
+                urlConnection.setRequestProperty("Authorization", "Basic " + authBytesString);
+
+                int statusCode = urlConnection.getResponseCode();
+                return statusCode == 200 || statusCode == 203 || statusCode == 206 || statusCode == 226;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean isValidKey) {
+            super.onPostExecute(isValidKey);
+            delegate.processFinish(isValidKey);
         }
     }
 
@@ -317,8 +486,6 @@ public class MainActivity extends AppCompatActivity
                     mainDrawer.firebaseAuthWithGoogle(account);
                 } else {
                     Toast.makeText(this, "Google Sign In failed", Toast.LENGTH_SHORT).show();
-                    // Google Sign In failed, update UI appropriately
-                    // ...
                 }
             }
         }
@@ -340,38 +507,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     LinearLayoutManager mLayoutManager;
-
-    public Date parseOrReturnNull(String date) {
-        try {
-            DateFormat formatter = new SimpleDateFormat("MMMM dd HH:mm", Locale.US);
-            return formatter.parse(date);
-        } catch (ParseException e) {
-            return null;
-        }
-    }
-
-    private ArrayList<IGenericItem> sortNotesByDate(ArrayList<IGenericItem> list) {
-        Collections.sort(list, new Comparator<IGenericItem>() {
-            @Override
-            public int compare(IGenericItem a, IGenericItem b) {
-                Date date2 = b.getDateObject();//parseOrReturnNull(((ClassNote) b).getDateString());
-                Date date1 = a.getDateObject();// parseOrReturnNull(((ClassNote) a).getDateString());
-                if (date1 == null) {
-                    if (date2 == null) {
-                        return 0;
-                    }
-                    return 1;
-                }
-                if (date2 == null) {
-                    return -1;
-                }
-                return date2.compareTo(date1);
-            }
-        });
-        Collections.reverse(list);
-        return list;
-    }
-    private Parcelable recyclerViewState;
 
     public void refreshList() {
         noteList = db.getData();

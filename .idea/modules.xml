@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/AftercallNote.iml" filepath="$PROJECT_DIR$/AftercallNote.iml" />
+      <module fileurl="file://$PROJECT_DIR$/AfterCallNote.iml" filepath="$PROJECT_DIR$/AfterCallNote.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
     </modules>
   </component>

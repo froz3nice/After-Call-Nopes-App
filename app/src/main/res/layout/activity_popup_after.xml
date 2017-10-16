@@ -175,7 +175,8 @@
                     android:layout_weight="1"
                     android:background="@android:color/transparent"
                     android:hint="@string/EnterNoteHint"
-                    android:inputType="textCapSentences|textMultiLine"
+                    android:inputType="textCapSentences|textMultiLine|textVisiblePassword"
+                    android:privateImeOptions="nm"
                     android:textColorHint="#aeaeb1">
 
                     <requestFocus />

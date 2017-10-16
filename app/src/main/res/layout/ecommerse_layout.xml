@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <EditText
+        android:id="@+id/key"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:hint="Enter web api key here"
+        android:layout_marginLeft="16dp"
+        android:textColor="@android:color/black"
+        android:textColorHint="@color/lightGrey"
+        android:theme="@style/AppTheme"/>
+
+    <EditText
+        android:id="@+id/url"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:focusableInTouchMode="true"
+        android:hint="Enter web url"
+        android:inputType="textUri"
+        android:layout_marginLeft="16dp"
+        android:textColor="@android:color/black"
+        android:textColorHint="@color/lightGrey"
+        android:theme="@style/AppTheme"/>
+
+
+    <Button
+        android:id="@+id/presta_button"
+        style="?android:textAppearanceSmall"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:background="@color/colorAccent"
+        android:text="Get Prestashop data"
+        android:textColor="@android:color/black"
+        android:textStyle="bold" />
+</LinearLayout>
