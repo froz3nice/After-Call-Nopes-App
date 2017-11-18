@@ -3,7 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="18dp"
     android:orientation="vertical"
     android:paddingBottom="3dp"
     android:paddingEnd="1dp"
@@ -11,27 +10,14 @@
     android:paddingRight="1dp"
     android:paddingStart="13dp">
 
-    <com.android.internal.widget.DialogTitle
-        android:id="@+id/alertTitle"
-        style="?android:attr/textAppearanceLarge"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_gravity="start"
-        android:layout_marginTop="18dp"
-        android:ellipsize="end"
-        android:paddingLeft="6dp"
-        android:paddingStart="6dp"
-        android:text="@string/selectExport"
-        android:textAlignment="viewStart" />
-
     <CheckBox
         android:id="@+id/checkBoxCalls"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="18dp"
         android:gravity="center_vertical"
-        android:paddingLeft="14dp"
-        android:paddingStart="14dp"
+        android:layout_marginTop="20dp"
+        android:paddingLeft="16dp"
+        android:paddingStart="16dp"
         android:text="@string/ExportCalls"
         android:textSize="16sp" />
 
@@ -40,11 +26,10 @@
         android:id="@+id/checkBoxNotes"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="10dp"
-        android:layout_marginTop="18dp"
+        android:layout_marginTop="16dp"
         android:gravity="center_vertical"
-        android:paddingLeft="14dip"
-        android:paddingStart="14dip"
+        android:paddingLeft="16dp"
+        android:paddingStart="16dp"
         android:text="@string/exportNotes"
         android:textSize="16sp" />
 </LinearLayout>

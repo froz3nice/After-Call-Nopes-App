@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<EditText xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/add_user"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:inputType="textNoSuggestions|textEmailAddress"
-    android:paddingEnd="15dp"
-    android:paddingLeft="25dp"
-    android:paddingRight="15dp"
-    android:paddingStart="25dp"
-    android:textColor="@color/black"
-    android:textSize="19sp" />
+    <EditText xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/et_add_user"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textNoSuggestions|textEmailAddress"
+        android:textColor="@color/black"
+        android:textSize="19sp" />

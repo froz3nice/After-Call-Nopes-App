@@ -1,15 +1,11 @@
 package com.example.juseris.aftercallnote.Activities;
 
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Color;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.provider.ContactsContract;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -23,10 +19,11 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.juseris.aftercallnote.UtilsPackage.DateUtils;
 import com.example.juseris.aftercallnote.Models.CallStatisticsEntity;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.R;
-import com.example.juseris.aftercallnote.Utils;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
@@ -63,7 +60,7 @@ public class AllStatisticsView extends AppCompatActivity {
     private Database db;
     private CallStatisticsEntity cse;
     private SharedPreferences prefs;
-
+    private Context context;
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
@@ -73,24 +70,20 @@ public class AllStatisticsView extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_call_statistics);
-        db = new Database(getApplicationContext());
+        context = this;
+        db = new Database(context);
         if (getIntent().getStringExtra("PhoneNumber") == null) {
             cse = db.getStatistics();
             setTitle("Statistics");
         } else {
             cse = db.getStatistics(getIntent().getStringExtra("PhoneNumber"));
-            setTitle("Statistics of " + Utils.getContactName(getApplicationContext(), cse.getNumber()));
+            setTitle("Statistics of " + Utils.getContactName(context, cse.getNumber()));
         }
         setUpPieChart();
         float calls = cse.getIncomingCallCount() + cse.getOutgoingCallCount();
         float notes = cse.getTypedNoteCount();
-        if (calls != 0) {
-            float percentage = (notes / calls) * 100;
-            //String.format("%.2f", floatValue);
-            mChart.setCenterText(String.format(java.util.Locale.US, "%.0f", percentage) + " %");
-            mChart.setCenterTextSize(22f);
-            mChart.setCenterTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
-        }
+        setCirclePercentage(calls, notes);
+
         int[] colorCodes = {
                 Color.rgb(204, 0, 204), Color.rgb(51, 0, 102)};
         setData(colorCodes);
@@ -120,15 +113,15 @@ public class AllStatisticsView extends AppCompatActivity {
             LinearLayout.LayoutParams parms_left_layout = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
             parms_left_layout.weight = 1F;
-            LinearLayout left_layout = new LinearLayout(getApplicationContext());
+            LinearLayout left_layout = new LinearLayout(context);
             left_layout.setOrientation(LinearLayout.HORIZONTAL);
             left_layout.setGravity(Gravity.START | Gravity.CENTER);
 
             LinearLayout.LayoutParams parms_legen_layout = new LinearLayout.LayoutParams(
                     20, 20);
 
-            parms_legen_layout.setMargins(0, 0, 20, 0);
-            LinearLayout legend_layout = new LinearLayout(getApplicationContext());
+            parms_legen_layout.setMargins(0, 0, 15, 0);
+            LinearLayout legend_layout = new LinearLayout(context);
             legend_layout.setLayoutParams(parms_legen_layout);
             legend_layout.setOrientation(LinearLayout.HORIZONTAL);
             if (i < 2) {
@@ -136,7 +129,7 @@ public class AllStatisticsView extends AppCompatActivity {
             }
             left_layout.addView(legend_layout);
 
-            TextView txt_unit = new TextView(getApplicationContext());
+            TextView txt_unit = new TextView(context);
             txt_unit.setSingleLine();
             txt_unit.setTextColor(Color.BLACK);
             txt_unit.setText(titles[i]);
@@ -224,6 +217,20 @@ public class AllStatisticsView extends AppCompatActivity {
         //entry label styling
         mChart.setEntryLabelColor(Color.BLACK);
         mChart.setEntryLabelTextSize(12f);
+        setUpToolbar();
+    }
+
+    private void setCirclePercentage( float calls, float notes) {
+        if (calls != 0) {
+            float percentage = (notes / calls) * 100;
+            //String.format("%.2f", floatValue);
+            mChart.setCenterText(String.format(java.util.Locale.US, "%.0f", percentage) + " %");
+            mChart.setCenterTextSize(22f);
+            mChart.setCenterTextColor(ContextCompat.getColor(context, R.color.colorPrimary));
+        }
+    }
+
+    private void setUpToolbar(){
         Toolbar toolbar = (Toolbar) findViewById(R.id.statsToolbar);
         toolbar.setTitleTextColor(Color.WHITE);
         ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
@@ -237,7 +244,6 @@ public class AllStatisticsView extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
         }
-
     }
 
     @Override
@@ -307,7 +313,7 @@ public class AllStatisticsView extends AppCompatActivity {
         ArrayList<Entry> incomingValues = new ArrayList<>();
         ArrayList<Entry> outgoingValues = new ArrayList<>();
 
-        prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        prefs = PreferenceManager.getDefaultSharedPreferences(context);
        /* prefs.edit().putInt("outgoing."+1,0).apply();
         prefs.edit().putInt("outgoing."+2,0).apply();
         prefs.edit().putInt("outgoing."+3,0).apply();
@@ -346,13 +352,8 @@ public class AllStatisticsView extends AppCompatActivity {
                 return numMap.get((int) value);
             }
         });
+        new DateUtils(context).removeWrongData();
         int day = calendar.get(Calendar.DAY_OF_WEEK);
-        for (int i = 0; i < 7; i++) {
-            day--;
-            if (day < 1) {
-                day = 7;
-            }
-        }
 
         for (int i = 1; i < 8; i++) {
             incomingValues.add(new Entry(i, prefs.getInt("incoming." + day, 0)));
@@ -434,7 +435,7 @@ public class AllStatisticsView extends AppCompatActivity {
                 + cse.getRemindersAddedCount() + cse.getTypedNoteCount();
         if (total == 0) {
             AllStatisticsView.this.finish();
-            Toast.makeText(getApplicationContext(), "No data yet", Toast.LENGTH_SHORT).show();
+            Toast.makeText(context, "No data yet", Toast.LENGTH_SHORT).show();
         }
         DecimalFormat format = new DecimalFormat();
         format.setDecimalSeparatorAlwaysShown(false);

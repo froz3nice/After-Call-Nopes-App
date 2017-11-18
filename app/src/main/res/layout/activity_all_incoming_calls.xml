@@ -16,9 +16,9 @@
     <com.ogaclejapan.smarttablayout.SmartTabLayout
         android:id="@+id/viewpagertab"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginBottom="5dp"
-        android:layout_marginTop="64dp"
+        android:layout_height="65dp"
+        android:layout_marginTop="65dp"
+
         app:stl_clickable="true"
         app:stl_defaultTabBackground="@android:color/transparent"
         app:stl_defaultTabTextAllCaps="true"

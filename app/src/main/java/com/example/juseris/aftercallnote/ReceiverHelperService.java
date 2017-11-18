@@ -1,6 +1,5 @@
 package com.example.juseris.aftercallnote;
 
-import android.app.ActivityManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -10,11 +9,11 @@ import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.telephony.TelephonyManager;
-import android.widget.Toast;
 
 import com.example.juseris.aftercallnote.Activities.ActivityPopupAfter;
 import com.example.juseris.aftercallnote.Activities.ActivityPopupBefore;
 import com.example.juseris.aftercallnote.Models.ContactsEntity;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
@@ -45,8 +44,11 @@ public class ReceiverHelperService extends Service implements PhoneCallReceiver.
             return;
         }
         //String nr = prefs.getString("LastActiveNr","");
+        Calendar calendar = Calendar.getInstance();
         switch (prefs.getInt("state", 0)) {
             case TelephonyManager.CALL_STATE_RINGING:
+                new UtilsPackage.DateUtils(context).removeWrongData();
+                prefs.edit().putLong("lastIncomingCallTime",calendar.getTimeInMillis()).apply();
                 prefs.edit().putString("LastActiveNr", nr).apply();
                 prefs.edit().putBoolean("isIncoming", true).apply();
                 prefs.edit().putLong("callStartTime", new Date().getTime()).apply();
@@ -58,13 +60,15 @@ public class ReceiverHelperService extends Service implements PhoneCallReceiver.
                     context.startService(new Intent(context, FlyingButton.class));
                 }
                 if (prefs.getInt("lastState", 0) != TelephonyManager.CALL_STATE_RINGING) {
+                    new UtilsPackage.DateUtils(context).removeWrongData();
+                    prefs.edit().putLong("lastOutgoingCallTime",calendar.getTimeInMillis()).apply();
                     prefs.edit().putBoolean("isIncoming", false).apply();
                     prefs.edit().putLong("callStartTime", new Date().getTime()).apply();
                     onOutgoingCallStarted(context, new Date());
                 }
                 break;
             case TelephonyManager.CALL_STATE_IDLE:
-                if (isMyServiceRunning(FlyingButton.class, context)) {
+                if (Utils.isMyServiceRunning(FlyingButton.class, context)) {
                     context.stopService(new Intent(context, FlyingButton.class));
                 }
                 if (prefs.getInt("lastState", 0) == TelephonyManager.CALL_STATE_RINGING) {
@@ -120,16 +124,6 @@ public class ReceiverHelperService extends Service implements PhoneCallReceiver.
             local.setAction("com.braz.close");
             ctx.sendBroadcast(local);
         }
-    }
-
-    private boolean isMyServiceRunning(Class<?> serviceClass, Context ctx) {
-        ActivityManager manager = (ActivityManager) ctx.getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private void onIncomingCallStarted(final Context ctx, Date start) {

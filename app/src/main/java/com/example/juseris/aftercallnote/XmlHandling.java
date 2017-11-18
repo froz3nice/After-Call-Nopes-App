@@ -1,25 +1,21 @@
 package com.example.juseris.aftercallnote;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.preference.PreferenceManager;
 import android.util.Base64;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.example.juseris.aftercallnote.Models.Order;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import org.w3c.dom.CharacterData;
@@ -33,13 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.Locale;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -69,7 +59,7 @@ public class XmlHandling {
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
         db = new Database(context);
         if(isNetworkAvailable()) {
-            new Test().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+            new OrderLoader().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     }
 
@@ -90,13 +80,16 @@ public class XmlHandling {
             //....
             String authBytesString = Base64.encodeToString(authToBytes.getBytes(), Base64.DEFAULT);// I keep it generic
             //then your code
-            urlConnection = (HttpURLConnection) url
-                    .openConnection();
+            urlConnection = (HttpURLConnection) url.openConnection();
+            //urlConnection = NetCipher.getHttpsURLConnection(url);
+            urlConnection.setConnectTimeout(2500); //set timeout to 5 seconds
+            urlConnection.setReadTimeout(2500);
             urlConnection.setDoOutput(false);
             urlConnection.setRequestProperty("Authorization", "Basic " + authBytesString);
 
             InputStream xml;// = urlConnection.getInputStream();
             int statusCode = urlConnection.getResponseCode();
+            Log.d("status_code",String.valueOf(statusCode));
             xml = urlConnection.getInputStream();
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             DocumentBuilder db = dbf.newDocumentBuilder();
@@ -201,6 +194,7 @@ public class XmlHandling {
             String orderState = getOrderState(document);
             String phoneNr = getPhoneNr(document);
             String date = getDate(document);
+            Log.d("date",date);
             return new Order(firstName, lastName, phoneNr, id, orderState, date);
         } catch (Exception e) {
             e.printStackTrace();
@@ -268,13 +262,9 @@ public class XmlHandling {
         return "";
     }
 
-    class Test extends AsyncTask<Void, ArrayList<Order>, ArrayList<Order>> {
-
-        private Exception exception;
-
+    class OrderLoader extends AsyncTask<Void,ArrayList<Order>,ArrayList<Order>> {
         @Override
         protected void onPreExecute() {
-            super.onPreExecute();
             String fixedUrl = urlName.replace(".", ",").substring(8, urlName.length());
             DatabaseReference ref = myRef.child("Prestashop").child(fixedUrl);
             ref.addValueEventListener(new ValueEventListener() {
@@ -291,7 +281,21 @@ public class XmlHandling {
             });
         }
 
-        protected ArrayList<Order> doInBackground(Void... urls) {
+        @Override
+        public void onPostExecute(ArrayList<Order> data) {
+            for (Order order : data) {
+                String str = String.format(Locale.CANADA, "%s  %s  %s  %s", order.getOrder_nr(), order.getName(), order.getOrder_state(), order.getSurname());
+                System.out.println(str);
+            }
+            if (user != null) {
+                String fixedUrl = urlName.replace(".", ",");
+                //DatabaseReference userRef = myRef.child("Prestashop").child(fixedUrl);
+                // userRef.setValue(feed);
+            }
+        }
+
+        @Override
+        protected ArrayList<Order> doInBackground(Void... voids) {
             URL url;
             ArrayList<Order> orders = new ArrayList<>();
             try {
@@ -311,18 +315,6 @@ public class XmlHandling {
                 e.printStackTrace();
             }
             return orders;
-        }
-
-        protected void onPostExecute(ArrayList<Order> feed) {
-            for (Order order : feed) {
-                String str = String.format(Locale.CANADA, "%s  %s  %s  %s", order.getOrder_nr(), order.getName(), order.getOrder_state(), order.getSurname());
-                System.out.println(str);
-            }
-            if (user != null) {
-                String fixedUrl = urlName.replace(".", ",");
-                //DatabaseReference userRef = myRef.child("Prestashop").child(fixedUrl);
-                // userRef.setValue(feed);
-            }
         }
     }
 

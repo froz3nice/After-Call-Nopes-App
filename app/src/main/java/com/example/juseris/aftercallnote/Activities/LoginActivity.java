@@ -67,19 +67,8 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        toolbar.setTitleTextColor(Color.WHITE);
-        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
-        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
+        setUpToolbar();
 
-        layoutParams.height = height;
-        toolbar.setLayoutParams(layoutParams);
-        setSupportActionBar(toolbar);
-
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setDisplayShowHomeEnabled(true);
-        }
         if (isNetworkAvailable()) {
             auth = FirebaseAuth.getInstance();
             inputEmail = (EditText) findViewById(R.id.email);
@@ -95,84 +84,111 @@ public class LoginActivity extends AppCompatActivity {
                 }
             });
 
-            btnLogin.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    String email = inputEmail.getText().toString();
-                    final String password = inputPassword.getText().toString();
+            setUpLoginBtnListener();
 
-                    if (TextUtils.isEmpty(email)) {
-                        Toast.makeText(getApplicationContext(), "Enter email address", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    if (TextUtils.isEmpty(password)) {
-                        Toast.makeText(getApplicationContext(), "Enter password", Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    progressBar.setVisibility(View.VISIBLE);
-
-                    //authenticate user
-                    auth.signInWithEmailAndPassword(email, password)
-                            .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
-                                @Override
-                                public void onComplete(@NonNull Task<AuthResult> task) {
-                                    // If sign in fails, display a message to the user. If sign in succeeds
-                                    // the auth state listener will be notified and logic to handle the
-                                    // signed in user can be handled in the listener.
-                                    progressBar.setVisibility(View.GONE);
-                                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-
-                                    if (!task.isSuccessful()) {
-                                        // there was an error
-                                        if (password.length() < 6) {
-                                            inputPassword.setError(getString(R.string.minimum_password));
-                                        } else {
-                                            Toast.makeText(LoginActivity.this, "Wrong email or password", Toast.LENGTH_LONG).show();
-                                        }
-                                    } else {
-                                        if (user != null) {
-                                            if (!user.isEmailVerified()) {
-                                                Toast.makeText(LoginActivity.this, "Email not authenticated", Toast.LENGTH_SHORT).show();
-                                                FirebaseAuth.getInstance().signOut();
-                                            } else {
-                                                Toast.makeText(LoginActivity.this, "Successfully logged in", Toast.LENGTH_SHORT).show();
-                                                final String userId = user.getUid();
-                                                final String email = user.getEmail();
-                                                FirebaseDatabase database = FirebaseDatabase.getInstance();
-                                                myRef = database.getReference();
-                                                DatabaseReference ref = myRef.child("Emails");
-                                                ref.addListenerForSingleValueEvent(new ValueEventListener() {
-                                                    @Override
-                                                    public void onDataChange(DataSnapshot snapshot) {
-                                                        if (!snapshot.hasChild(userId)) {
-                                                            DatabaseReference userNameRef = myRef.child("Emails");
-                                                            String fixedEmail = email.replace(".", ",");
-                                                            userNameRef.child(fixedEmail).setValue("");
-                                                        } else {
-                                                            //DO not write to database
-                                                        }
-                                                    }
-
-                                                    @Override
-                                                    public void onCancelled(DatabaseError databaseError) {
-                                                        Log.e("eserys", databaseError.getDetails());
-                                                    }
-                                                });
-                                                Intent i = new Intent(LoginActivity.this, MainActivity.class);
-                                                startActivity(i);
-                                                finish();
-                                            }
-                                        }
-                                    }
-                                }
-                            });
-                }
-            });
         } else {
             Toast.makeText(this, "Network unavailable", Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void setUpToolbar() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setTitleTextColor(Color.WHITE);
+        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
+        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
+
+        layoutParams.height = height;
+        toolbar.setLayoutParams(layoutParams);
+        setSupportActionBar(toolbar);
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+    }
+
+    private void setUpLoginBtnListener() {
+        btnLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String email = inputEmail.getText().toString();
+                final String password = inputPassword.getText().toString();
+
+                if (TextUtils.isEmpty(email)) {
+                    Toast.makeText(getApplicationContext(), "Enter email address", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                if (TextUtils.isEmpty(password)) {
+                    Toast.makeText(getApplicationContext(), "Enter password", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                progressBar.setVisibility(View.VISIBLE);
+
+                authenticateUser(email,password);
+                //authenticate user
+
+            }
+        });
+    }
+
+
+    private void authenticateUser(String email,final String password) {
+        auth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(LoginActivity.this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        // If sign in fails, display a message to the user. If sign in succeeds
+                        // the auth state listener will be notified and logic to handle the
+                        // signed in user can be handled in the listener.
+                        progressBar.setVisibility(View.GONE);
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+                        if (!task.isSuccessful()) {
+                            // there was an error
+                            if (password.length() < 6) {
+                                inputPassword.setError(getString(R.string.minimum_password));
+                            } else {
+                                Toast.makeText(LoginActivity.this, "Wrong email or password", Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            if (user != null) {
+                                if (!user.isEmailVerified()) {
+                                    Toast.makeText(LoginActivity.this, "Email not authenticated", Toast.LENGTH_SHORT).show();
+                                    FirebaseAuth.getInstance().signOut();
+                                } else {
+                                    Toast.makeText(LoginActivity.this, "Successfully logged in", Toast.LENGTH_SHORT).show();
+                                    final String userId = user.getUid();
+                                    final String email = user.getEmail();
+                                    FirebaseDatabase database = FirebaseDatabase.getInstance();
+                                    myRef = database.getReference();
+                                    DatabaseReference ref = myRef.child("Emails");
+                                    ref.addListenerForSingleValueEvent(new ValueEventListener() {
+                                        @Override
+                                        public void onDataChange(DataSnapshot snapshot) {
+                                            if (!snapshot.hasChild(userId)) {
+                                                DatabaseReference userNameRef = myRef.child("Emails");
+                                                String fixedEmail = email.replace(".", ",");
+                                                userNameRef.child(fixedEmail).setValue("");
+                                            } else {
+                                                //DO not write to database
+                                            }
+                                        }
+
+                                        @Override
+                                        public void onCancelled(DatabaseError databaseError) {
+                                            Log.e("eserys", databaseError.getDetails());
+                                        }
+                                    });
+                                    Intent i = new Intent(LoginActivity.this, MainActivity.class);
+                                    startActivity(i);
+                                    finish();
+                                }
+                            }
+                        }
+                    }
+                });
     }
 
     private boolean isNetworkAvailable() {

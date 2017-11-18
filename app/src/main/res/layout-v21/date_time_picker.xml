@@ -12,11 +12,13 @@
         android:orientation="vertical"
         android:padding="8dp">
 
-        <TimePicker
+        <com.example.juseris.aftercallnote.StyledTimePicker
             android:id="@+id/time_picker"
-            style="@style/MyAlertDialogStyle"
+            style="@style/myTimePicker"
+            android:theme="@style/myTimePicker"
+            android:background="@color/colorAccent"
             android:timePickerMode="spinner"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content" />
 
         <com.prolificinteractive.materialcalendarview.MaterialCalendarView
@@ -24,6 +26,7 @@
             android:id="@+id/calendarView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@color/white"
             app:mcv_showOtherDates="all"
             app:mcv_selectionColor="@color/colorAccent"
             />

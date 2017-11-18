@@ -22,12 +22,12 @@
 
     <application
         android:allowBackup="false"
-        android:icon="@mipmap/ic_plius"
-        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:label="Notecall"
         android:supportsRtl="true"
         android:name=".App"
         android:theme="@style/AppTheme">
-
+        
         <receiver android:name=".PhoneCallReceiver"
             android:enabled="true">
             <intent-filter>
@@ -59,7 +59,7 @@
         <activity
             android:name=".Activities.WelcomeActivity"
             android:excludeFromRecents="true"
-            android:label="@string/title_activity_welcome"
+            android:label="@string/app_name"
             android:launchMode="singleInstance"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar">

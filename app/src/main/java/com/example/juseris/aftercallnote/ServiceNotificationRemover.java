@@ -15,6 +15,8 @@ import com.example.juseris.aftercallnote.Activities.ActivityPopupBefore;
  */
 
 public class ServiceNotificationRemover extends Service {
+    private String CHANNEl_ID = "listener_notif";
+
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -24,9 +26,8 @@ public class ServiceNotificationRemover extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Intent intent1 = new Intent(this, ActivityPopupBefore.class);
-        PendingIntent pendIntent = PendingIntent.getActivity(this, 0, intent1, 0);
-        Notification noti = new NotificationCompat.Builder(this)
+        PendingIntent pendIntent = PendingIntent.getActivity(this, 0, new Intent(), 0);
+        Notification noti = new NotificationCompat.Builder(this,CHANNEl_ID)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentText(getString(R.string.is_running))
                 .setSmallIcon(R.drawable.ic_call_icon)

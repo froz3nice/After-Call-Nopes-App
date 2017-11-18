@@ -100,7 +100,7 @@ public class ClassNote implements Parcelable,IGenericItem {
         Date date2 = new Date();
         try {
             date2 = formatter.parse(getDateString());
-        } catch (ParseException e) {
+        } catch (ParseException ignored) {
 
         }
         return date2;

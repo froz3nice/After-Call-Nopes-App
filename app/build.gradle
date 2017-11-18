@@ -3,22 +3,23 @@ apply plugin: 'com.android.application'
 android {
     signingConfigs {
         config {
-            keyAlias 'AfterCallNote+Key'
+            keyAlias 'AndroidDebugKey'
             keyPassword 'geras789'
-            storeFile file('C:/Users/juseris/Desktop/AftercallNote/KeyStore/Key.jks')
+            storeFile file('C:/Users/Juozas/.android/debug.keystore')
             storePassword 'geras789'
         }
     }
-    compileSdkVersion 25
-    buildToolsVersion "25.0.1"
+    compileSdkVersion 26
+    buildToolsVersion '26.0.2'
     defaultConfig {
         applicationId "com.example.juseris.aftercallnote"
         minSdkVersion 14
-        targetSdkVersion 25
+        targetSdkVersion 26
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
 
     buildTypes {
         release {
@@ -44,12 +45,13 @@ dependencies {
     compile 'com.google.firebase:firebase-auth:10.2.4'
     compile 'com.google.android.gms:play-services-auth:10.2.4'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.1'
-    compile 'com.android.support:recyclerview-v7:25.2.0'
-    compile 'com.android.support:cardview-v7:25.2.0'
+    compile 'com.android.support:recyclerview-v7:26.0.0'
+    compile 'com.android.support:cardview-v7:26.0.0'
     compile 'com.ms-square:expandableTextView:0.1.4'
     compile 'com.prolificinteractive:material-calendarview:1.4.3'
     compile 'uk.co.chrisjenx:calligraphy:2.2.0'
     compile 'com.github.QuadFlask:colorpicker:0.0.13'
+    compile 'info.guardianproject.netcipher:netcipher:1.2'
 
     compile ('com.squareup.retrofit2:converter-simplexml:2.1.0') {
         exclude group: 'xpp3', module: 'xpp3'
@@ -59,9 +61,10 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:25.2.0'
-    compile 'com.android.support:design:25.2.0'
+    compile 'com.android.support:appcompat-v7:26.0.0'
+    compile 'com.android.support:design:26.0.0'
     testCompile 'junit:junit:4.12'
+    compile 'javax.inject:javax.inject:1'
 }
 
 apply plugin: 'com.google.gms.google-services'

@@ -18,6 +18,7 @@ import com.example.juseris.aftercallnote.Models.ContactEntity;
 import com.example.juseris.aftercallnote.Models.ContactsEntity;
 import com.example.juseris.aftercallnote.Models.DataForSyncingModel;
 import com.example.juseris.aftercallnote.Models.IGenericItem;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
@@ -391,10 +392,8 @@ public class FirebaseConnection {
         } else {
             note.setCategory(syncedNote.getCategory());
         }
-        int catchCall = 1;
-        if (!db.getCatchCall(syncedNote.getPhoneNumber())) {
-            catchCall = 0;
-        }
+        int catchCall = PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(syncedNote.getPhoneNumber(), true) ? 1 : 0;
         note.setCatchCall(catchCall);
         note.setFriendEmail(friendEmail);
         return note;

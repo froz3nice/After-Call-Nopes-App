@@ -64,7 +64,16 @@ public class AllCallsActivity extends AppCompatActivity {
 
         SmartTabLayout viewPagerTab = (SmartTabLayout) findViewById(R.id.viewpagertab);
         viewPagerTab.setViewPager(viewPager);
+        setUpToolbar();
 
+        boolean hasSyncedCall = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                .getBoolean("IncomingSynced", false);
+        if (!hasSyncedCall) {
+            new LoadContact().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        }
+    }
+
+    private void setUpToolbar() {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbarAllIncoming);
         ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
 
@@ -77,12 +86,6 @@ public class AllCallsActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
             getSupportActionBar().setDisplayShowHomeEnabled(true);
-        }
-
-        boolean hasSyncedCall = PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                .getBoolean("IncomingSynced", false);
-        if (!hasSyncedCall) {
-            new LoadContact().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     }
    /* @Override

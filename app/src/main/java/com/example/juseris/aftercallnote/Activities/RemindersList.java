@@ -54,42 +54,47 @@ public class RemindersList extends AppCompatActivity {
         setContentView(R.layout.activity_reminders_list);
         setTitle("All reminders");
         Database db = new Database(getApplicationContext());
-        Toolbar toolbar = (Toolbar) findViewById(R.id.remindersToolbar);
         RecyclerView reminderList = (RecyclerView) findViewById(R.id.ac_main_listView);
-        setSupportActionBar(toolbar);
-        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
 
-        layoutParams.height = (int) TypedValue
-                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
-
-        toolbar.setLayoutParams(layoutParams);
-
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setDisplayShowHomeEnabled(true);
-        }
+        setUpToolbar();
         ArrayList<IGenericItem> noteList = db.getData();
         ArrayList<IGenericItem> noteSynced = db.getSyncedData();
         noteList.addAll(noteSynced);
-        for (Iterator<IGenericItem> iterator = noteList.iterator(); iterator.hasNext(); ) {
-            IGenericItem value = iterator.next();
-            if (value instanceof ClassNote) {
-                if (((ClassNote) value).getReminder().equals("")) {
-                    iterator.remove();
-                }
-            }
-        }
+        noteList = getOnlyReminderNotes(noteList);
         if (!noteList.isEmpty()) {
             findViewById(R.id.noEvents).setVisibility(View.GONE);
         }
         // Collections.reverse(noteList);
         ArrayList<IGenericItem> listWithSectionHeaders = new ArrayList<>();
-        Boolean upcomingHeader = false;
-        Boolean historyHeader = false;
         sortNotesByDate(noteList);
         //Date date2 = parseOrReturnNull(((ClassNote) noteList.get(0)).getReminder());
 
+        listWithSectionHeaders = getListWithSectionHeaders(noteList);
+        setUpRecyclerView(listWithSectionHeaders,reminderList);
+      /*  reminderList.setItemsCanFocus(true);
+        reminderList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                //MainAdapter.ViewHolder holder = (MainAdapter.ViewHolder) view.getTag();
+                Intent intent = new Intent(getApplicationContext(), MainListChildItem.class);
+                intent.putExtra("classNoteobj", listAdapter.getItem(position));
+                startActivity(intent);
+            }
+        });*/
+    }
 
+    private void setUpRecyclerView(ArrayList<IGenericItem> reminders, RecyclerView reminderList){
+        AllRemindersAdapter listAdapter = new AllRemindersAdapter(RemindersList.this, reminders);
+        listAdapter.notifyDataSetChanged();
+        reminderList.setAdapter(listAdapter);
+        reminderList.setLayoutManager(new LinearLayoutManager(RemindersList.this));
+        reminderList.getRecycledViewPool().setMaxRecycledViews(0, 0);
+    }
+
+    private ArrayList<IGenericItem> getListWithSectionHeaders(ArrayList<IGenericItem> noteList){
+        Boolean upcomingHeader = false;
+        Boolean historyHeader = false;
+        ArrayList<IGenericItem> listWithSectionHeaders = new ArrayList<>();
         for (IGenericItem note : noteList) {
             if (note instanceof ClassNote) {
                 String str_date = ((ClassNote) note).getReminder();
@@ -123,23 +128,34 @@ public class RemindersList extends AppCompatActivity {
                 listWithSectionHeaders.add(note);
             }
         }
+        return listWithSectionHeaders;
+    }
 
-        AllRemindersAdapter listAdapter = new AllRemindersAdapter(RemindersList.this, listWithSectionHeaders);
-        listAdapter.notifyDataSetChanged();
-        reminderList.setAdapter(listAdapter);
-        reminderList.setLayoutManager(new LinearLayoutManager(RemindersList.this));
-        reminderList.getRecycledViewPool().setMaxRecycledViews(0, 0);
-
-      /*  reminderList.setItemsCanFocus(true);
-        reminderList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //MainAdapter.ViewHolder holder = (MainAdapter.ViewHolder) view.getTag();
-                Intent intent = new Intent(getApplicationContext(), MainListChildItem.class);
-                intent.putExtra("classNoteobj", listAdapter.getItem(position));
-                startActivity(intent);
+    private ArrayList<IGenericItem> getOnlyReminderNotes(ArrayList<IGenericItem> noteList){
+        for (Iterator<IGenericItem> iterator = noteList.iterator(); iterator.hasNext(); ) {
+            IGenericItem value = iterator.next();
+            if (value instanceof ClassNote) {
+                if (((ClassNote) value).getReminder().equals("")) {
+                    iterator.remove();
+                }
             }
-        });*/
+        }
+        return noteList;
+    }
+    private void setUpToolbar(){
+        Toolbar toolbar = (Toolbar) findViewById(R.id.remindersToolbar);
+        setSupportActionBar(toolbar);
+        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
+
+        layoutParams.height = (int) TypedValue
+                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
+
+        toolbar.setLayoutParams(layoutParams);
+
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
     }
 
     public Date parseOrReturnNull(String date) {

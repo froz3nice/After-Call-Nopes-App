@@ -1,5 +1,6 @@
 package com.example.juseris.aftercallnote;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -22,6 +23,7 @@ import android.util.TypedValue;
 import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.CheckBox;
@@ -36,6 +38,7 @@ import android.widget.Toast;
 import com.example.juseris.aftercallnote.Activities.LoginActivity;
 import com.example.juseris.aftercallnote.Activities.MainActivity;
 import com.example.juseris.aftercallnote.Adapters.NavigationViewAdapter;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
@@ -214,13 +217,17 @@ public class MainDrawerClass {
         });
     }
 
+    @SuppressLint("RestrictedApi")
     private void addSyncedUser() {
         View view = activity.getLayoutInflater().inflate(R.layout.edittext_add_user, null);
-        final EditText textInputNote = (EditText) view.findViewById(R.id.add_user);
+        final EditText textInputNote = (EditText) view.findViewById(R.id.et_add_user);
         AlertDialog.Builder dialogAddNote = new AlertDialog.Builder(activity);
         dialogAddNote.setTitle("Type email which you want to sync with");
         dialogAddNote.setCancelable(true);
         dialogAddNote.setView(textInputNote);
+        int margin = (int) TypedValue
+                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, activity.getResources().getDisplayMetrics());
+        dialogAddNote.setView(textInputNote, margin, 0, margin, 0);
         textInputNote.setTextColor(Color.BLACK);
         textInputNote.setSelection(textInputNote.length());
         dialogAddNote.setPositiveButton("Save", new DialogInterface.OnClickListener() {
@@ -242,8 +249,10 @@ public class MainDrawerClass {
 
             }
         });
-
-        dialogAddNote.create().show();
+        double width = activity.getResources().getDisplayMetrics().widthPixels * 0.95;
+        AlertDialog alertDialog = dialogAddNote.create();
+        alertDialog.getWindow().setLayout((int) width, WindowManager.LayoutParams.WRAP_CONTENT);
+        alertDialog.show();
         ((InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE))
                 .toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
     }
@@ -287,6 +296,15 @@ public class MainDrawerClass {
         db.deleteSyncedNotesTable();
         activity.refreshList();
     }
+    public void changeEmail(){
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        }
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if(user != null) {
+            userName.setText(user.getEmail());
+        }
+    }
 
     private void changeToMainDrawer() {
         loggedOffLayout.setVisibility(View.GONE);
@@ -308,7 +326,7 @@ public class MainDrawerClass {
             lw = (ListView) navigationView.findViewById(R.id.nav_sync_list);
             list = new ArrayList<>();
             final String email = user.getEmail().replace(".", ",");
-            if (isNetworkAvailable()) {
+            if (Utils.isNetworkAvailable(context)) {
                 loadAccountSyncedList(email);
             } else {
                 Toast.makeText(context, "Network unavailable", Toast.LENGTH_SHORT).show();
@@ -378,16 +396,10 @@ public class MainDrawerClass {
                 .create();
     }
 
-    private boolean isNetworkAvailable() {
-        ConnectivityManager connectivityManager
-                = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
-        return activeNetworkInfo != null && activeNetworkInfo.isConnected();
-    }
 
     public void showExportDialog() {
         final View dialogView = View.inflate(activity, R.layout.export_dialog, null);
-        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity, R.style.MyAlertDialogStyle);
+        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(activity, R.style.AlertDialogCustom);
 
         exportCalls = (CheckBox) dialogView.findViewById(R.id.checkBoxCalls);
         exportNotes = (CheckBox) dialogView.findViewById(R.id.checkBoxNotes);
@@ -429,9 +441,7 @@ public class MainDrawerClass {
                         if (!task.isSuccessful()) {
                             Toast.makeText(activity, "Authentication failed.",
                                     Toast.LENGTH_SHORT).show();
-                            activity.dialog.dismiss();
                         } else {
-
                             FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
                             userName.setText(user.getEmail());
                             drawer = (DrawerLayout) activity.findViewById(R.id.drawer_layout);
@@ -453,7 +463,6 @@ public class MainDrawerClass {
                             String fixedEmail = email.replace(".", ",");
                             fetchDataFromFirebase(fixedEmail);
                             con.addMyNotes(fixedEmail);
-                            activity.dialog.dismiss();
                             Toast.makeText(activity, "Successfully logged in",
                                     Toast.LENGTH_SHORT).show();
                         }

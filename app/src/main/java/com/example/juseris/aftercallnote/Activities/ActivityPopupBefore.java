@@ -5,7 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -21,23 +20,13 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.example.juseris.aftercallnote.Adapters.ChildItemAdapter;
-import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.example.juseris.aftercallnote.Models.Order;
 import com.example.juseris.aftercallnote.R;
-import com.example.juseris.aftercallnote.Utils;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Locale;
 
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
@@ -86,15 +75,14 @@ public class ActivityPopupBefore extends AppCompatActivity {
         setContentView(R.layout.activity_popup_before);
         context = getApplicationContext();
         Toolbar toolbar = (Toolbar) findViewById(R.id.beforeCallToolbar);
-        TextView title = (TextView) toolbar.findViewById(R.id.toolbar_title);
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
         boolean isIncomingCall = prefs.getBoolean("isIncoming", true);
+        TextView toolbarTitle = findViewById(R.id.toolbar_title);
         if (!isIncomingCall) {
-            title.setText("Outgoing Call");
+            toolbarTitle.setText(R.string.outgoing_call);
         } else {
-            title.setText("Incoming Call");
+            toolbarTitle.setText(R.string.incoming_call);
         }
-        toolbar.setTitleTextColor(Color.WHITE);
         setSupportActionBar(toolbar);
         ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
         //toolbar height

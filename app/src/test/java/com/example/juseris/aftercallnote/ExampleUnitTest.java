@@ -4,8 +4,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 
-import static com.example.juseris.aftercallnote.Utils.fixNumber;
-import static org.junit.Assert.*;
+import static com.example.juseris.aftercallnote.UtilsPackage.fixNumber;
 import static org.junit.Assert.assertEquals;
 
 /**

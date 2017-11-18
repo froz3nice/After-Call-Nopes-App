@@ -1,4 +1,4 @@
-package com.example.juseris.aftercallnote;
+package com.example.juseris.aftercallnote.UtilsPackage;
 
 import android.app.Activity;
 import android.graphics.Rect;

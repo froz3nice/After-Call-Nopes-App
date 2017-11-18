@@ -30,19 +30,10 @@ import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.example.juseris.aftercallnote.R;
-import com.example.juseris.aftercallnote.Utils;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.List;
-import java.util.Locale;
 
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
@@ -56,7 +47,9 @@ public class MainListChildItem extends AppCompatActivity {
     private CheckBox catchCall;
     private SharedPreferences prefs;
     private FloatingActionButton myFab;
-
+    private ImageView call;
+    private ImageView text;
+    private TextView name;
     @Override
     protected void attachBaseContext(Context newBase) {
         super.attachBaseContext(CalligraphyContextWrapper.wrap(newBase));
@@ -66,45 +59,72 @@ public class MainListChildItem extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_list_child_item);
+        setTitle("");
+
+        ClassNote classNote = getIntent().getExtras().getParcelable("classNoteobj");
+
         context = getApplicationContext();
         db = new Database(context);
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
-        ClassNote classNote = getIntent().getExtras().getParcelable("classNoteobj");
+        myFab = (FloatingActionButton) findViewById(R.id.myFAB);
+        contactList = (RecyclerView) findViewById(R.id.ac_child_listView);
+        text = (ImageView) findViewById(R.id.textToContact);
+        call = (ImageView) findViewById(R.id.callToContact);
+        catchCall = (CheckBox) findViewById(R.id.catchCallCheckBox);
+        name = (TextView) findViewById(R.id.name);
+
         originalPhoneNr = classNote.getPhoneNumber();
         phoneNumber = Utils.fixNumber(classNote.getPhoneNumber());
-        ImageView text = (ImageView) findViewById(R.id.textToContact);
-        ImageView call = (ImageView) findViewById(R.id.callToContact);
-        contactList = (RecyclerView) findViewById(R.id.ac_child_listView);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar1);
-        setSupportActionBar(toolbar);
-        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
-        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setDisplayShowHomeEnabled(true);
-        }
-        layoutParams.height = height;
-        toolbar.setLayoutParams(layoutParams);
 
-        setTitle("");
+        setUpToolbar();
+
         TextView nr = (TextView) findViewById(R.id.number);
         nr.setText(phoneNumber);
-        TextView name = (TextView) findViewById(R.id.name);
+        setName(classNote);
+        refreshList();
+
+        setUpCatchCallListener();
+        setUpTextBtnListener();
+        setUpCallBtnListener();
+        setUpFabListener();
+    }
+
+    private void setName(ClassNote classNote){
         if (classNote.getName().equals("")) {
             name.setText("No name");
         } else {
             name.setText(classNote.getName());
         }
-        refreshList();
+    }
 
-        catchCall = (CheckBox) findViewById(R.id.catchCallCheckBox);
+    private void setUpTextBtnListener(){
+        text.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent sendIntent = new Intent(Intent.ACTION_VIEW);
+                sendIntent.setData(Uri.parse("sms:" + phoneNumber));
+                startActivity(sendIntent);
+            }
+        });
+    }
+
+    private void setUpCallBtnListener(){
+        call.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                listView_MakeACall();
+            }
+        });
+    }
+
+    private void setUpCatchCallListener(){
         catchCall.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 if (catchCall.isChecked()) {
                     prefs.edit().putBoolean(phoneNumber, true).apply();
                 } else {
-                    AlertDialog dialog = alertDialog();
+                    AlertDialog dialog = catchCallDialog();
                     dialog.show();
                     double width = getResources().getDisplayMetrics().widthPixels * 0.95;
                     dialog.getWindow().setLayout((int) width, WindowManager.LayoutParams.WRAP_CONTENT);
@@ -115,24 +135,9 @@ public class MainListChildItem extends AppCompatActivity {
             }
         });
         catchCall.setChecked(prefs.getBoolean(phoneNumber, true));
+    }
 
-        text.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent sendIntent = new Intent(Intent.ACTION_VIEW);
-                sendIntent.setData(Uri.parse("sms:" + phoneNumber));
-                startActivity(sendIntent);
-            }
-        });
-
-        call.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                listView_MakeACall();
-            }
-        });
-
-        myFab = (FloatingActionButton) findViewById(R.id.myFAB);
+    private void setUpFabListener(){
         myFab.bringToFront();
         myFab.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -145,6 +150,19 @@ public class MainListChildItem extends AppCompatActivity {
         });
     }
 
+    private void setUpToolbar(){
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar1);
+        setSupportActionBar(toolbar);
+        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
+        int height = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+        layoutParams.height = height;
+        toolbar.setLayoutParams(layoutParams);
+        setTitle(R.string.Contact);
+    }
 
     private void listView_MakeACall() {
         if (phoneNumber.equalsIgnoreCase("None")) {
@@ -156,7 +174,7 @@ public class MainListChildItem extends AppCompatActivity {
         }
     }
 
-    private AlertDialog alertDialog() {
+    private AlertDialog catchCallDialog() {
         return new AlertDialog.Builder(this)
                 //set message, title, and icon
                 .setMessage("AfterCallNotes will not show and ask Notes for this contact anymore.\n\nYou can change this in current contact page.")

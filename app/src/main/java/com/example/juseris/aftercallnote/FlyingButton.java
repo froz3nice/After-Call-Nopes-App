@@ -4,23 +4,16 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.graphics.Point;
-import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.content.ContextCompat;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 import com.example.juseris.aftercallnote.Activities.ActivityPopupAfter;
 
@@ -46,7 +39,7 @@ public class FlyingButton extends Service {
         ctx = this;
         windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
         setTheme(R.style.AppTheme);
-        btn = (FloatingActionButton) LayoutInflater.from(this).inflate(R.layout.rotated_addnote_button, null);
+        btn = (FloatingActionButton) LayoutInflater.from(this).inflate(R.layout.floating_button_on_call, null);
         final WindowManager.LayoutParams params = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.WRAP_CONTENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,

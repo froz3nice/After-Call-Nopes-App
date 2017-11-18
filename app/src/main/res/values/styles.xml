@@ -55,20 +55,12 @@
         <item name="android:textColorHint">@color/line</item>
     </style>
 
-    <style name="MyAlertDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
-        <!-- Used for the title and text -->
-        <item name="colorAccent">@color/colorAccent</item>
-        <item name="android:textColorPrimary">@color/black2</item>
-        <!-- Used for the background -->
-        <item name="android:background">#eaeaea</item>
-    </style>
-
     <style name="myTimePicker" parent="Theme.AppCompat.Light.Dialog.Alert">
         <!-- Used for the title and text -->
-        <item name="colorAccent">@color/colorPrimary</item>
-        <item name="android:textColorPrimary">@color/black2</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:textColorPrimary">@color/white</item>
+        <item name="android:divider">@color/white</item>
         <!-- Used for the background -->
-        <item name="android:background">#eaeaea</item>
     </style>
 
     <style name="ThemeSpinner" parent="android:Widget.ListView.DropDown">
@@ -96,8 +88,6 @@
         <item name="android:disabledAlpha">0.5</item>
     </style>
 
-
-
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
@@ -110,14 +100,6 @@
 
     <style name="MyActionBarTitleText" parent="@style/TextAppearance.AppCompat.Widget.ActionBar.Title">
         <item name="android:textColor">@color/white</item>
-    </style>
-
-    <style name="spinnerItemStyle" parent="android:Widget.TextView.SpinnerItem">
-
-    </style>
-
-    <style name="spinnerDropDownItemStyle" parent="android:TextAppearance.Widget.TextView.SpinnerItem">
-
     </style>
 
     <style name="Theme.Translucent" parent="@android:style/TextAppearance.Medium">

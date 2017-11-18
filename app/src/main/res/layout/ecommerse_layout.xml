@@ -11,6 +11,7 @@
         android:layout_marginTop="10dp"
         android:hint="Enter web api key here"
         android:layout_marginLeft="16dp"
+        android:layout_marginRight="8dp"
         android:textColor="@android:color/black"
         android:textColorHint="@color/lightGrey"
         android:theme="@style/AppTheme"/>
@@ -19,10 +20,10 @@
         android:id="@+id/url"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:focusableInTouchMode="true"
         android:hint="Enter web url"
         android:inputType="textUri"
         android:layout_marginLeft="16dp"
+        android:layout_marginRight="8dp"
         android:textColor="@android:color/black"
         android:textColorHint="@color/lightGrey"
         android:theme="@style/AppTheme"/>

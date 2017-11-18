@@ -6,6 +6,7 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.Build;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
@@ -19,17 +20,15 @@ import com.example.juseris.aftercallnote.Activities.ActivityPopupBefore;
  * Created by Juozas on 2017.10.06.
  */
 
-public class StateChecker extends Service implements PhoneCallReceiver.Listener {
+public class StateChecker extends Service {
+    private String CHANNEl_ID = "listener_notif";
 
     public int onStartCommand(Intent intent, int flags, int startId) {
 
-        //The intent to launch when the user clicks the expanded notification
-        Intent intent1 = new Intent(this, ActivityPopupBefore.class);
-        intent1.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent pendIntent = PendingIntent.getActivity(this, 0, intent1, 0);
+        PendingIntent pendIntent = PendingIntent.getActivity(this, 0, new Intent(), 0);
         Notification noti = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN) {
-            noti = new NotificationCompat.Builder(this)
+        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.M ) {
+            noti = new NotificationCompat.Builder(this,CHANNEl_ID)
                     .setContentTitle(getString(R.string.app_name))
                     .setContentText(getString(R.string.is_running))
                     .setSmallIcon(R.drawable.ic_call_icon)
@@ -38,15 +37,12 @@ public class StateChecker extends Service implements PhoneCallReceiver.Listener 
                     .setPriority(Notification.PRIORITY_MIN)
                     .build();
             startForeground(12345, noti);
+            IntentFilter filter2 = new IntentFilter();
+            filter2.addAction("android.intent.action.PHONE_STATE");
+            PhoneCallReceiver mCallReceiver = new PhoneCallReceiver();
+            registerReceiver(mCallReceiver, filter2);
         }
-
-        IntentFilter filter2 = new IntentFilter();
-        filter2.addAction("android.intent.action.PHONE_STATE");
-        filter2.addAction("android.intent.action.PROCESS_OUTGOING_CALLS");
-
-        PhoneCallReceiver mCallReceiver = new PhoneCallReceiver();
-        registerReceiver(mCallReceiver, filter2);
-        mCallReceiver.registerListener(this);
+        startService(new Intent(this, ServiceNotificationRemover.class));
         return START_STICKY;
     }
 
@@ -56,11 +52,5 @@ public class StateChecker extends Service implements PhoneCallReceiver.Listener 
         return null;
     }
 
-
-    @Override
-    public void onCallStateChanged(Context context, int state, String nr) {
-        ReceiverHelperService helper = new ReceiverHelperService();
-        helper.onCallStateChanged(context,state,nr);
-    }
 }
 

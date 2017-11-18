@@ -12,9 +12,8 @@
         android:orientation="vertical"
         android:padding="8dp">
 
-        <TimePicker
+        <com.example.juseris.aftercallnote.StyledTimePicker
             android:id="@+id/time_picker"
-            style="@style/MyAlertDialogStyle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 

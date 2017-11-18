@@ -10,23 +10,20 @@ import android.preference.PreferenceManager;
 import android.provider.CallLog;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
-import android.widget.Toast;
 
-import com.example.juseris.aftercallnote.Activities.ActivityPopupAfter;
 import com.example.juseris.aftercallnote.Activities.MainListChildItem;
 import com.example.juseris.aftercallnote.Adapters.InCallsAdapter;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Models.ContactEntity;
 import com.example.juseris.aftercallnote.R;
-import com.example.juseris.aftercallnote.Utils;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;

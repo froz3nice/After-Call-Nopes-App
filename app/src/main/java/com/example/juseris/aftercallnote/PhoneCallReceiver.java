@@ -1,11 +1,12 @@
 package com.example.juseris.aftercallnote;
 
-import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.preference.PreferenceManager;
 import android.telephony.TelephonyManager;
+
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 
 public class PhoneCallReceiver extends BroadcastReceiver  {
 

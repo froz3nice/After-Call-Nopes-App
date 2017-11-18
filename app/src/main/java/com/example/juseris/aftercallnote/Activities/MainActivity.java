@@ -3,24 +3,21 @@ package com.example.juseris.aftercallnote.Activities;
 import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.app.SearchManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
@@ -39,6 +36,8 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.juseris.aftercallnote.Adapters.MainAdapter;
@@ -49,11 +48,10 @@ import com.example.juseris.aftercallnote.Models.ClassNote;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.Models.IGenericItem;
 import com.example.juseris.aftercallnote.Models.Order;
-import com.example.juseris.aftercallnote.PhoneCallReceiver;
 import com.example.juseris.aftercallnote.R;
 import com.example.juseris.aftercallnote.ServiceNotificationRemover;
 import com.example.juseris.aftercallnote.StateChecker;
-import com.example.juseris.aftercallnote.Utils;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 import com.example.juseris.aftercallnote.XmlHandling;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
@@ -65,25 +63,14 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseReference;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import retrofit2.http.Url;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class MainActivity extends AppCompatActivity
@@ -107,6 +94,7 @@ public class MainActivity extends AppCompatActivity
     private SharedPreferences prefs;
     private MainDrawerClass mainDrawer;
     private Dialog prestaDialog;
+    android.support.v7.widget.Toolbar toolbar;
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
@@ -146,6 +134,99 @@ public class MainActivity extends AppCompatActivity
         if (!prefs.getBoolean("outgoingCheckBox", false)) {
             prefs.edit().putBoolean("outgoingCheckBox", false).apply();
         }
+        checkPermissions(savedInstanceState);
+        setTitle(getString(R.string.app_name));
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        String email = "";
+        if (user != null) {
+            email = user.getEmail();
+            String fixedEmail = email.replace(".", ",");
+            con.addMyNotes(fixedEmail);
+            con.fetchDataFromFirebase(fixedEmail);
+            String key = prefs.getString("web_key","");
+            String url = prefs.getString("web_url","");
+            if(!key.equals("") && !url.equals("")) {
+                if(Utils.isNetworkAvailable(context)) {
+                    new XmlHandling(this, url, key);
+                }
+            }
+        }
+
+        startService(new Intent(context, StateChecker.class));
+        startService(new Intent(context, ServiceNotificationRemover.class));
+
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
+        setUpFabListener();
+        toolbar = findViewById(R.id.toolbar);
+        setUpSearch();
+    }
+
+
+    private void setUpSearch() {
+        SearchManager searchManager = (SearchManager) MainActivity.this.getSystemService(Context.SEARCH_SERVICE);
+        searchView = toolbar.findViewById(R.id.search_view);
+        final TextView title = toolbar.findViewById(R.id.appName);
+
+        if (searchView != null) {
+            searchView.setMaxWidth( Integer.MAX_VALUE );
+            LinearLayout searchEditFrame = (LinearLayout) searchView.findViewById(R.id.search_edit_frame);
+            ((LinearLayout.LayoutParams) searchEditFrame.getLayoutParams()).leftMargin = 0;
+            searchView.setOnSearchClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    title.setVisibility(View.GONE);
+                }
+            });
+
+            searchView.setOnCloseListener(new SearchView.OnCloseListener() {
+                @Override
+                public boolean onClose() {
+                    title.setVisibility(View.VISIBLE);
+                    return false;
+                }
+            });
+
+            searchView.setSearchableInfo(searchManager.getSearchableInfo(MainActivity.this.getComponentName()));
+            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String query) {
+                    return true; // handled
+                }
+
+                @Override
+                public boolean onQueryTextChange(String newText) {
+                    listAdapter.getFilter().filter(newText);
+                    listAdapter.notifyDataSetChanged();
+                    recyclerView.setAdapter(listAdapter);
+                    return true;
+                }
+            });
+        }
+    }
+
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if(mainDrawer != null) {
+            mainDrawer.changeEmail();
+        }
+    }
+
+    private void setUpFabListener() {
+        myFab = (FloatingActionButton) findViewById(R.id.myFAB);
+        myFab.bringToFront();
+        myFab.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                prefs.edit().putBoolean("haveToChooseContact", true).apply();
+                Intent i = new Intent(MainActivity.this, ActivityPopupAfter.class);
+                prefs.edit().putString("callTime", "").apply();
+                startActivity(i);
+            }
+        });
+    }
+
+    private void checkPermissions(Bundle savedInstanceState) {
         if (Build.VERSION.SDK_INT >= 23) {
             String[] permissions = {Manifest.permission.READ_CONTACTS,
                     Manifest.permission.READ_PHONE_STATE,
@@ -167,19 +248,6 @@ public class MainActivity extends AppCompatActivity
         } else {
             initialize();
         }
-        setTitle("After Call Notes");
-        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_HIDDEN);
-
-        myFab = (FloatingActionButton) findViewById(R.id.myFAB);
-        myFab.bringToFront();
-        myFab.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                prefs.edit().putBoolean("haveToChooseContact", true).apply();
-                Intent i = new Intent(MainActivity.this, ActivityPopupAfter.class);
-                prefs.edit().putString("callTime", "").apply();
-                startActivity(i);
-            }
-        });
     }
 
     @Override
@@ -193,26 +261,6 @@ public class MainActivity extends AppCompatActivity
         db = new Database(this.context);
         recyclerView = (RecyclerView) findViewById(R.id.ac_main_listView);
         mainDrawer = new MainDrawerClass(context, MainActivity.this);
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        String email = "";
-        if (user != null) {
-            email = user.getEmail();
-            String fixedEmail = email.replace(".", ",");
-            String syncOccured = prefs.getString("SyncOccured", "");
-            //if (syncOccured.equals("")) {
-            con.addMyNotes(fixedEmail);
-            //}
-            con.fetchDataFromFirebase(fixedEmail);
-        }
-        String key = prefs.getString("web_key","");
-        String url = prefs.getString("web_url","");
-        if(!key.equals("") && !url.equals("")) {
-            new XmlHandling(context, url, key);
-        }
-        if(Utils.isMyServiceRunning(StateChecker.class,context)) {
-            startService(new Intent(context, StateChecker.class));
-        }
-        startService(new Intent(context, ServiceNotificationRemover.class));
     }
 
     @Override
@@ -227,37 +275,41 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.action_sync:
-                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-                String email = "";
-                if (user != null) {
-                    email = user.getEmail();
-                    String fixedEmail = email.replace(".", ",");
-                    con.addDataToFirebase(fixedEmail);
-                    String syncOccured = prefs.getString("SyncOccured", "");
-                    if (syncOccured.equals("")) {
-                        con.addMyNotes(fixedEmail);
+        if(noteList != null) {
+            switch (item.getItemId()) {
+                case R.id.action_sync:
+                    FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                    String email = "";
+                    if (user != null) {
+                        email = user.getEmail();
+                        String fixedEmail = email.replace(".", ",");
+                        con.addDataToFirebase(fixedEmail);
+                        String syncOccured = prefs.getString("SyncOccured", "");
+                        if (syncOccured.equals("")) {
+                            con.addMyNotes(fixedEmail);
+                        }
                     }
-                }
-                refreshList();
-                return true;
-            case R.id.action_show_all:
-                showAllNotes();
-                return true;
-            case R.id.action_show_mine:
-                showMyNotesFirst();
-                return true;
-            case R.id.action_showSynced:
-                showSyncedNotesFirst();
-                return true;
-            case R.id.action_testPresta:
-                testPresta();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+                    refreshList();
+                    return true;
+                case R.id.action_show_all:
+                    showAllNotes();
+                    return true;
+                case R.id.action_show_mine:
+                    showMyNotesFirst();
+                    return true;
+                case R.id.action_showSynced:
+                    showSyncedNotesFirst();
+                    return true;
+                case R.id.action_testPresta:
+                    testPresta();
+                    return true;
+                default:
+                    return super.onOptionsItemSelected(item);
+            }
         }
+        return true;
     }
+
     private void testPresta(){
         ArrayList<IGenericItem> a = new ArrayList<>();
         for (IGenericItem note : noteList) {
@@ -330,7 +382,7 @@ public class MainActivity extends AppCompatActivity
             Intent i = new Intent(this, AllCallsActivity.class);
             startActivity(i);
         }else if (id == R.id.nav_prestashop) {
-            prestaDialog = new Dialog(context);
+            prestaDialog = new Dialog(context,R.style.AlertDialogCustom);
             prestaDialog.setContentView(R.layout.ecommerse_layout);
             prestaDialog.setTitle("Enter url and web api key");
             final EditText key = (EditText) prestaDialog.findViewById(R.id.key);
@@ -365,6 +417,8 @@ public class MainActivity extends AppCompatActivity
             if(key_str.equals("") && url_str.equals("")) {
                 ((InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE))
                         .toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
+                double width = getResources().getDisplayMetrics().widthPixels * 0.95;
+                prestaDialog.getWindow().setLayout((int) width, WindowManager.LayoutParams.WRAP_CONTENT);
                 prestaDialog.show();
             }else{
                 Toast.makeText(context, "Prestashop already connected", Toast.LENGTH_SHORT).show();
@@ -478,8 +532,8 @@ public class MainActivity extends AppCompatActivity
             if (requestCode == RC_SIGN_IN) {
                 GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
                 if (result.isSuccess()) {
-                    dialog = ProgressDialog.show(context, "Signing in", "Please wait...", true);
                     // Google Sign In was successful, authenticate with Firebase
+                    Toast.makeText(context, "Logging in...", Toast.LENGTH_SHORT).show();
                     GoogleSignInAccount account = result.getSignInAccount();
                     Uri uri = account.getPhotoUrl();
                     mainDrawer.putImageIntoNavBar(uri);
@@ -554,37 +608,13 @@ public class MainActivity extends AppCompatActivity
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
     }
 
-    public ProgressDialog dialog;
+    public ProgressBar dialog;
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater menuInflater = getMenuInflater();
-        menuInflater.inflate(R.menu.dashboard, menu);
         menuInflater.inflate(R.menu.sync_refresh, menu);
-        final MenuItem searchItem = menu.findItem(R.id.action_search);
 
-        SearchManager searchManager = (SearchManager) MainActivity.this.getSystemService(Context.SEARCH_SERVICE);
-
-        if (searchItem != null) {
-            searchView = (SearchView) searchItem.getActionView();
-        }
-        if (searchView != null) {
-            searchView.setSearchableInfo(searchManager.getSearchableInfo(MainActivity.this.getComponentName()));
-            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                @Override
-                public boolean onQueryTextSubmit(String query) {
-                    return true; // handled
-                }
-
-                @Override
-                public boolean onQueryTextChange(String newText) {
-                    listAdapter.getFilter().filter(newText);
-                    listAdapter.notifyDataSetChanged();
-                    recyclerView.setAdapter(listAdapter);
-                    return true;
-                }
-            });
-        }
         return super.onCreateOptionsMenu(menu);
     }
 

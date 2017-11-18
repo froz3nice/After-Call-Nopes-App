@@ -1,16 +1,14 @@
 package com.example.juseris.aftercallnote.Activities;
 
-import android.app.ActivityManager;
+import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
@@ -21,7 +19,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
-import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
@@ -44,17 +41,17 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.example.juseris.aftercallnote.Adapters.CustomListAdapterDialog;
 import com.example.juseris.aftercallnote.FirebaseConnection;
 import com.example.juseris.aftercallnote.FlyingButton;
-import com.example.juseris.aftercallnote.KeyboardUtil;
+import com.example.juseris.aftercallnote.UtilsPackage.KeyboardUtil;
 import com.example.juseris.aftercallnote.Models.CategoriesAndColors;
 import com.example.juseris.aftercallnote.Database;
 import com.example.juseris.aftercallnote.R;
-import com.example.juseris.aftercallnote.Utils;
+import com.example.juseris.aftercallnote.StyledTimePicker;
+import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
@@ -93,7 +90,9 @@ public class ActivityPopupAfter extends AppCompatActivity {
     private TextView add_edit_note;
     private int minute;
     private int hour;
-
+    private Button buttonAdd;
+    private String CHANNEL = "note_for_last_called";
+    StyledTimePicker timePicker;
 
     // private Spinner spinner;
     @Override
@@ -112,20 +111,20 @@ public class ActivityPopupAfter extends AppCompatActivity {
         );
 
         setContentView(R.layout.activity_popup_after);
-        context = getApplicationContext();
+        context = this;
         final View viewGroup = findViewById(R.id.rootView);
         KeyboardUtil keyboardUtil = new KeyboardUtil(this, viewGroup);
         keyboardUtil.enable();
         prefs = PreferenceManager.getDefaultSharedPreferences(context);
         database = new Database(context);
-        textNote = (EditText) findViewById(R.id.ac_note);
-        tw_category = (TextView) findViewById(R.id.category);
-        tw_reminder = (TextView) findViewById(R.id.reminder);
+        textNote = findViewById(R.id.ac_note);
+        tw_category = findViewById(R.id.category);
+        tw_reminder = findViewById(R.id.reminder);
 
 
-        Button buttonAdd = (Button) findViewById(R.id.ac_addNote);
+        buttonAdd = findViewById(R.id.ac_addNote);
         buttonAdd.bringToFront();
-        if (isMyServiceRunning(FlyingButton.class)) {
+        if (Utils.isMyServiceRunning(FlyingButton.class,context)) {
             context.stopService(new Intent(context, FlyingButton.class));
         }
         //Typeface custom_font = Typeface.createFromAsset(context.getAssets(), "fonts/hover.ttf");
@@ -137,13 +136,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
         manager = (NotificationManager) context.getSystemService(NOTIFICATION_SERVICE);
 
         add_edit_note = (TextView) findViewById(R.id.add_edit_note);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.afterToolBar);
-        setSupportActionBar(toolbar);
-        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
-        //toolbar height
-        layoutParams.height = (int) TypedValue
-                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
-        toolbar.setLayoutParams(layoutParams);
+        setUpToolbar();
         box = (CheckBox) findViewById(R.id.toolbarCheckBox);
         name_number = (TextView) findViewById(R.id.name_number);
         box.setVisibility(View.VISIBLE);
@@ -151,23 +144,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
         //View calendarLayout = findViewById(R.id.calendarLayout);
         dialog = new Dialog(this);
         dialog.setTitle("Select category");
-       /* categoryLayout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
 
-            }
-        });
-
-
-        calendarLayout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-            }
-        });
-        showCategoryPopup();
-        showCalendar();*/
-
-        final String nrs = prefs.getString("NUMBERS", "");
         if (getIntent().getStringExtra("PhoneNumber") == null) {
             number = prefs.getString("LastActiveNr", "");
             createNotification();
@@ -175,15 +152,28 @@ public class ActivityPopupAfter extends AppCompatActivity {
             number = Utils.fixNumber(getIntent().getStringExtra("PhoneNumber"));
         }
 
-        if (number != null) {
-            if (number != null && !number.equals("")) {
-                name = Utils.getContactName(context, number);
-            }
+        if (number != null && !number.equals("")) {
+            name = Utils.getContactName(context, number);
         }
+
         setTitle("");
         if (getIntent().getStringExtra("category") != null) {
             category = getIntent().getStringExtra("category");
         }
+
+        setUpSaveBtnListener();
+
+
+        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            public void run() {
+                finish();
+            }
+        }, 1000 * 60 * 5);
+    }
+
+    private void setUpSaveBtnListener() {
         buttonAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -250,14 +240,16 @@ public class ActivityPopupAfter extends AppCompatActivity {
                 }
             }
         });
+    }
 
-        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            public void run() {
-                finish();
-            }
-        }, 1000 * 60 * 5);
+    private void setUpToolbar() {
+        Toolbar toolbar = (Toolbar) findViewById(R.id.afterToolBar);
+        setSupportActionBar(toolbar);
+        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
+        //toolbar height
+        layoutParams.height = (int) TypedValue
+                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
+        toolbar.setLayoutParams(layoutParams);
     }
 
     private void setCategoryColor(int color, String title) {
@@ -285,7 +277,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
     }
 
 
-    private AlertDialog alertDialog() {
+    private AlertDialog catchCallDialog() {
         return new AlertDialog.Builder(this)
                 //set message, title, and icon
                 .setMessage("AfterCallNotes will not show and ask Notes for this contact anymore.\n\nYou can change this in current contact page.")
@@ -399,7 +391,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
                 if (box.isChecked()) {
                     prefs.edit().putBoolean(number, true).apply();
                 } else {
-                    AlertDialog dialog = alertDialog();
+                    AlertDialog dialog = catchCallDialog();
                     dialog.show();
                     double width = getResources().getDisplayMetrics().widthPixels * 0.95;
                     dialog.getWindow().setLayout((int) width, WindowManager.LayoutParams.WRAP_CONTENT);
@@ -408,12 +400,11 @@ public class ActivityPopupAfter extends AppCompatActivity {
         });
     }
 
-    TimePicker timePicker;
     CalendarDay chosenDate = CalendarDay.today();
 
     public void createNotification() {
-        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context)
-                .setSmallIcon(R.mipmap.ic_plius)
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(context,CHANNEL)
+                .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle("Don't forget to add notes")
                 .setContentText("Add note for last called");
 
@@ -498,17 +489,6 @@ public class ActivityPopupAfter extends AppCompatActivity {
         return true;
     }
 
-
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public void chooseContact(View view) {
         Intent i = new Intent(ActivityPopupAfter.this, AllCallsActivity.class);
         startActivity(i);
@@ -542,6 +522,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
             CustomListAdapterDialog clad = new CustomListAdapterDialog(ActivityPopupAfter.this, titles);
             lv.setAdapter(clad);
             lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @SuppressLint("RestrictedApi")
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     // TextView tw = (TextView)findViewById(R.id.categoryText);
@@ -559,36 +540,14 @@ public class ActivityPopupAfter extends AppCompatActivity {
                         if (position == i) {
                             if (i == titles.size() - 1) {
                                 View v = getLayoutInflater().inflate(R.layout.edittext_add_user, null);
-                                final EditText textInputNote = (EditText) v.findViewById(R.id.add_user);
+                                final EditText textInputNote = (EditText) v.findViewById(R.id.et_add_user);
                                 final AlertDialog.Builder dialog = new AlertDialog.Builder(ActivityPopupAfter.this);
                                 dialog.setTitle("Enter a new category");
-                                dialog.setView(textInputNote);
+                                int margin = (int) TypedValue
+                                        .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, getResources().getDisplayMetrics());
+                                dialog.setView(textInputNote, margin, 0, margin, 0);
                                 textInputNote.setTextColor(Color.BLACK);
                                 textInputNote.setSelection(textInputNote.length());
-                           /* dialog.setNeutralButton("Choose color", new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    ColorPickerDialogBuilder
-                                            .with(ActivityPopupAfter.this)
-                                            .setTitle("Choose color")
-                                            .initialColor(Color.BLUE)
-                                            .wheelType(ColorPickerView.WHEEL_TYPE.FLOWER)
-                                            .density(12)
-                                            .setPositiveButton("ok", new ColorPickerClickListener() {
-                                                @Override
-                                                public void onClick(DialogInterface dialog, int selectedColor, Integer[] allColors) {
-                                                    color = selectedColor;
-                                                }
-                                            })
-                                            .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
-                                                @Override
-                                                public void onClick(DialogInterface dialog, int which) {
-                                                }
-                                            })
-                                            .build()
-                                            .show();
-                                }
-                            });*/
                                 dialog.setPositiveButton("Save", new DialogInterface.OnClickListener() {
                                     @Override
                                     public void onClick(DialogInterface dialog, int which) {
@@ -602,7 +561,10 @@ public class ActivityPopupAfter extends AppCompatActivity {
 
                                     }
                                 });
-                                dialog.create().show();
+                                double width = getResources().getDisplayMetrics().widthPixels * 0.95;
+                                AlertDialog alertDialog = dialog.create();
+                                alertDialog.getWindow().setLayout((int) width, WindowManager.LayoutParams.WRAP_CONTENT);
+                                alertDialog.show();
                                 ((InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE))
                                         .toggleSoftInput(InputMethodManager.SHOW_FORCED, InputMethodManager.HIDE_IMPLICIT_ONLY);
 
@@ -637,7 +599,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
     public void showCalendar(View view) {
 
         final View dialogView = View.inflate(ActivityPopupAfter.this, R.layout.date_time_picker, null);
-        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(ActivityPopupAfter.this, R.style.MyAlertDialogStyle);
+        final AlertDialog.Builder alertDialog = new AlertDialog.Builder(ActivityPopupAfter.this, R.style.myTimePicker);
 
         MaterialCalendarView mcv = (MaterialCalendarView) dialogView.findViewById(R.id.calendarView);
 
@@ -657,7 +619,7 @@ public class ActivityPopupAfter extends AppCompatActivity {
             }
         });
 
-        timePicker = (TimePicker) dialogView.findViewById(R.id.time_picker);
+        timePicker =(StyledTimePicker) dialogView.findViewById(R.id.time_picker);
         timePicker.setIs24HourView(true);
 
         ScrollView sv = (ScrollView) dialogView.findViewById(R.id.scrollView);

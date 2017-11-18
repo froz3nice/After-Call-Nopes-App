@@ -19,6 +19,7 @@ import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.ListView;
 
+import com.example.juseris.aftercallnote.Adapters.WeekListAdapter;
 import com.example.juseris.aftercallnote.R;
 
 import java.util.ArrayList;
@@ -26,7 +27,10 @@ import java.util.ArrayList;
 import uk.co.chrisjenx.calligraphy.CalligraphyContextWrapper;
 
 public class SettingsActivity extends AppCompatActivity {
-    private MyCustomAdapter dataAdapter = null;
+    private WeekListAdapter dataAdapter = null;
+    private CheckBox outgoing;
+    private CheckBox incoming;
+    private CheckBox showPurplePlus;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -48,47 +52,57 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.select_week_days);
-        final CheckBox showPurplePlus = (CheckBox) findViewById(R.id.showAddNoteCheckbox);
-        final CheckBox incoming = (CheckBox) findViewById(R.id.incomingCheckBox);
-        final CheckBox outgoing = (CheckBox) findViewById(R.id.outgoingCheckBox);
+        showPurplePlus = (CheckBox) findViewById(R.id.showAddNoteCheckbox);
+        incoming = (CheckBox) findViewById(R.id.incomingCheckBox);
+        outgoing = (CheckBox) findViewById(R.id.outgoingCheckBox);
 
         incoming.setChecked(PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                 .getBoolean("incomingCheckBox", true));
         outgoing.setChecked(PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
                 .getBoolean("outgoingCheckBox", true));
-        incoming.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (incoming.isChecked()) {
-                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                            .edit()
-                            .putBoolean("incomingCheckBox", true)
-                            .apply();
-                } else {
-                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                            .edit()
-                            .putBoolean("incomingCheckBox", false)
-                            .apply();
-                }
-            }
-        });
-        outgoing.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (outgoing.isChecked()) {
-                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                            .edit()
-                            .putBoolean("outgoingCheckBox", true)
-                            .apply();
-                } else {
-                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                            .edit()
-                            .putBoolean("outgoingCheckBox", false)
-                            .apply();
-                }
-            }
-        });
+        showPurplePlus.setChecked(PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                .getBoolean("purpleBox", false));
 
+        outGoingCbListener();
+        incomingCbListener();
+        showPurplePlusListener();
+        setUpToolbar();
+        setTitle("Settings");
+        setUpListView();
+    }
+
+    private void setUpToolbar(){
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar3);
+        setSupportActionBar(toolbar);
+        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
+        //toolbar height
+        layoutParams.height = (int) TypedValue
+                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
+        toolbar.setLayoutParams(layoutParams);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            getSupportActionBar().setDisplayShowHomeEnabled(true);
+        }
+    }
+
+    private void setUpListView(){
+        ArrayList<String> weekDays = new ArrayList<>();
+        weekDays.add("Monday");
+        weekDays.add("Tuesday");
+        weekDays.add("Wednesday");
+        weekDays.add("Thursday");
+        weekDays.add("Friday");
+        weekDays.add("Saturday");
+        weekDays.add("Sunday");
+        weekDays.add(getResources().getString(R.string.week_days_explanation));
+
+        dataAdapter = new WeekListAdapter(this,
+                R.layout.week_days, weekDays);
+        ListView listView = (ListView) findViewById(R.id.listView1);
+        // Assign adapter to ListView
+        listView.setAdapter(dataAdapter);
+    }
+    private void showPurplePlusListener(){
         showPurplePlus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -108,96 +122,45 @@ public class SettingsActivity extends AppCompatActivity {
                 }
             }
         });
-
-        showPurplePlus.setChecked(PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                .getBoolean("purpleBox", false));
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar3);
-        setSupportActionBar(toolbar);
-        ViewGroup.LayoutParams layoutParams = toolbar.getLayoutParams();
-        //toolbar height
-        layoutParams.height = (int) TypedValue
-                .applyDimension(TypedValue.COMPLEX_UNIT_DIP, 65, getResources().getDisplayMetrics());
-        toolbar.setLayoutParams(layoutParams);
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            getSupportActionBar().setDisplayShowHomeEnabled(true);
-        }
-        setTitle("Settings");
-        ArrayList<String> weekDays = new ArrayList<>();
-        weekDays.add("Monday");
-        weekDays.add("Tuesday");
-        weekDays.add("Wednesday");
-        weekDays.add("Thursday");
-        weekDays.add("Friday");
-        weekDays.add("Saturday");
-        weekDays.add("Sunday");
-        weekDays.add(getResources().getString(R.string.week_days_explanation));
-
-        dataAdapter = new MyCustomAdapter(this,
-                R.layout.week_days, weekDays);
-        ListView listView = (ListView) findViewById(R.id.listView1);
-        // Assign adapter to ListView
-        listView.setAdapter(dataAdapter);
     }
 
-    private class MyCustomAdapter extends ArrayAdapter<String> {
-
-        private ArrayList<String> weekList;
-
-        MyCustomAdapter(Context context, int textViewResourceId,
-                        ArrayList<String> countryList) {
-            super(context, textViewResourceId, countryList);
-            this.weekList = new ArrayList<>();
-            this.weekList.addAll(countryList);
-        }
-
-        private class ViewHolder {
-            CheckBox name;
-        }
-
-        @NonNull
-        @Override
-        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
-
-            ViewHolder holder = null;
-            Log.v("ConvertView", String.valueOf(position));
-
-            if (convertView == null) {
-                LayoutInflater vi = (LayoutInflater) getSystemService(
-                        Context.LAYOUT_INFLATER_SERVICE);
-                if (position < 7) {
-                    convertView = vi.inflate(R.layout.week_days, parent, false);
-
-                    holder = new ViewHolder();
-                    holder.name = (CheckBox) convertView.findViewById(R.id.checkBox1);
-                    convertView.setTag(holder);
-                    holder.name.setOnClickListener(new View.OnClickListener() {
-                        public void onClick(View v) {
-                            CheckBox cb = (CheckBox) v;
-                            if (cb.isChecked()) {
-                                PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                                        .edit()
-                                        .putBoolean(cb.getText().toString(), true)
-                                        .apply();
-                            } else {
-                                PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                                        .edit()
-                                        .putBoolean(cb.getText().toString(), false)
-                                        .apply();
-                            }
-                        }
-                    });
-                    String day = weekList.get(position);
-                    holder.name.setText(day);
-                    holder.name.setChecked(PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
-                            .getBoolean(day, true));
+    private void incomingCbListener(){
+        incoming.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (incoming.isChecked()) {
+                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                            .edit()
+                            .putBoolean("incomingCheckBox", true)
+                            .apply();
                 } else {
-                    convertView = vi.inflate(R.layout.settings_string, parent, false);
+                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                            .edit()
+                            .putBoolean("incomingCheckBox", false)
+                            .apply();
                 }
             }
-            return convertView;
-        }
+        });
     }
+    private void outGoingCbListener(){
+        outgoing.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (outgoing.isChecked()) {
+                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                            .edit()
+                            .putBoolean("outgoingCheckBox", true)
+                            .apply();
+                } else {
+                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext())
+                            .edit()
+                            .putBoolean("outgoingCheckBox", false)
+                            .apply();
+                }
+            }
+        });
+    }
+
 }
 
 
