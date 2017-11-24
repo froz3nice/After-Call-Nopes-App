@@ -13,6 +13,7 @@ import android.telephony.TelephonyManager;
 import com.example.juseris.aftercallnote.Activities.ActivityPopupAfter;
 import com.example.juseris.aftercallnote.Activities.ActivityPopupBefore;
 import com.example.juseris.aftercallnote.Models.ContactsEntity;
+import com.example.juseris.aftercallnote.UtilsPackage.DateUtils;
 import com.example.juseris.aftercallnote.UtilsPackage.Utils;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -47,7 +48,7 @@ public class ReceiverHelperService extends Service implements PhoneCallReceiver.
         Calendar calendar = Calendar.getInstance();
         switch (prefs.getInt("state", 0)) {
             case TelephonyManager.CALL_STATE_RINGING:
-                new UtilsPackage.DateUtils(context).removeWrongData();
+                new DateUtils(context).removeWrongData();
                 prefs.edit().putLong("lastIncomingCallTime",calendar.getTimeInMillis()).apply();
                 prefs.edit().putString("LastActiveNr", nr).apply();
                 prefs.edit().putBoolean("isIncoming", true).apply();
@@ -60,7 +61,7 @@ public class ReceiverHelperService extends Service implements PhoneCallReceiver.
                     context.startService(new Intent(context, FlyingButton.class));
                 }
                 if (prefs.getInt("lastState", 0) != TelephonyManager.CALL_STATE_RINGING) {
-                    new UtilsPackage.DateUtils(context).removeWrongData();
+                    new DateUtils(context).removeWrongData();
                     prefs.edit().putLong("lastOutgoingCallTime",calendar.getTimeInMillis()).apply();
                     prefs.edit().putBoolean("isIncoming", false).apply();
                     prefs.edit().putLong("callStartTime", new Date().getTime()).apply();
